@@ -2,6 +2,8 @@
 
 namespace Akindutire\Authorization;
 
+use Akindutire\Authorization\Console\Commands\ClearPermissionCache;
+use Akindutire\Authorization\Console\Commands\WarmPermissionCache;
 use Akindutire\Authorization\Middleware\ValidateSubjectAction;
 use Akindutire\Authorization\Services\PermissionSvc;
 use Illuminate\Routing\Router;
@@ -34,6 +36,14 @@ class AuthorizationServiceProvider extends ServiceProvider
         // Register middleware
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('validate.subject.action', ValidateSubjectAction::class);
+
+        // Register artisan commands
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                WarmPermissionCache::class,
+                ClearPermissionCache::class,
+            ]);
+        }
     }
 
     /**
@@ -49,8 +59,10 @@ class AuthorizationServiceProvider extends ServiceProvider
             'authorization'
         );
 
-        // Register PermissionSvc as singleton
-        $this->app->singleton(PermissionSvc::class, function ($app) {
+        // Register PermissionSvc (NOT as singleton for thread-safety)
+        // Each App::make() call creates a fresh instance to support
+        // different entity types with different permission column names
+        $this->app->bind(PermissionSvc::class, function ($app) {
             return new PermissionSvc();
         });
 
