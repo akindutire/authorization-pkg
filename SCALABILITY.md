@@ -50,12 +50,14 @@ Request → Middleware → Cache Check → Entity Lookup → Permission Validati
 ```
 
 #### Layer 1: Request-Level Cache
+
 - **Scope**: Current HTTP request only
 - **Purpose**: Prevent duplicate queries when middleware + manual checks run
 - **Storage**: `Illuminate\Http\Request::attributes`
 - **Lifetime**: Request duration (~100ms)
 
 #### Layer 2: Distributed Cache
+
 - **Scope**: Cross-request (shared across app instances)
 - **Purpose**: Avoid DB queries for frequently accessed entities
 - **Storage**: Redis/Memcached (configured in `config/cache.php`)
@@ -70,6 +72,7 @@ $user->grantPermission('can_edit');
 ```
 
 **Impact at 10k requests/second**:
+
 - **Without caching**: 10,000 DB queries/sec = database meltdown
 - **With caching (99% hit rate)**: 100 DB queries/sec = sustainable
 
@@ -106,6 +109,7 @@ class User extends Authenticatable
 ```
 
 **Benefits**:
+
 - **Storage**: 75% reduction (JSON vs CSV with column overhead)
 - **Parsing**: Eliminated (Laravel auto-decodes)
 - **Querying**: Database-level JSON operators enabled
@@ -121,6 +125,7 @@ $articles = Article::whereRaw("allowed_permissions @> '[\"can_broadcast\"]'")->g
 ```
 
 **Impact at 500M rows**:
+
 - **CSV format**: 200GB storage, 40k string operations/sec
 - **JSON format**: 50GB storage, zero parsing overhead
 
@@ -155,6 +160,7 @@ $attribute = new ($metadata['attribute_class'])(...$metadata['attribute_args']);
 ```
 
 **Impact**:
+
 - **Before**: 50μs × 10k req/sec = 500ms/sec wasted CPU
 - **After**: <1μs × 10k req/sec = <10ms/sec CPU usage
 - **Savings**: 98% reduction in reflection overhead
@@ -180,11 +186,11 @@ php artisan migrate
 
 **Query plan comparison** (500M rows):
 
-| Column | Without Index | With Index |
-|--------|---------------|------------|
-| `id` (PK) | 5ms | 5ms |
-| `uuid` | **25,000ms** ⚠️ | 8ms ✅ |
-| `email` | **30,000ms** ⚠️ | 6ms ✅ |
+| Column    | Without Index   | With Index |
+| --------- | --------------- | ---------- |
+| `id` (PK) | 5ms             | 5ms        |
+| `uuid`    | **25,000ms** ⚠️ | 8ms ✅     |
+| `email`   | **30,000ms** ⚠️ | 6ms ✅     |
 
 ---
 
@@ -213,6 +219,7 @@ $user->grantPermission('can_delete'); // Admin B (both saved correctly)
 ### 6. Optimized Permission Checking
 
 **Before** (O(n×m) complexity):
+
 ```php
 // Nested loops, multiple explode() calls per check
 foreach ($requiredActions as $action) {
@@ -221,6 +228,7 @@ foreach ($requiredActions as $action) {
 ```
 
 **After** (O(n+m) complexity):
+
 ```php
 // Single array_flip() + isset() for O(1) lookups
 $permSet = array_flip($this->subjectResolvedPermission()); // Memoized
@@ -230,6 +238,7 @@ foreach ($actions as $action) {
 ```
 
 **Impact**:
+
 - **String operations**: 40k/sec → <5k/sec (87% reduction)
 - **CPU usage**: 60% → <5% on permission checks
 
@@ -279,6 +288,7 @@ REDIS_PORT=6379
 ```
 
 **Infrastructure**:
+
 - **Cache**: Redis Cluster (sharded across 3-6 nodes)
 - **Database**: Read replicas (3+) for permission queries
 - **Queue**: Background cache warming
@@ -293,6 +303,7 @@ REDIS_PORT=6379
 ```
 
 **Load balancing**:
+
 ```php
 // Distribute permission checks across replicas
 DB::connection('mysql_read')->table('users')->where(...)->first();
@@ -303,6 +314,7 @@ DB::connection('mysql_read')->table('users')->where(...)->first();
 ## Benchmarks
 
 ### Test Environment
+
 - **Dataset**: 50M users, 10M articles
 - **Server**: 8 vCPU, 32GB RAM, SSD
 - **Database**: MySQL 8.0, 16GB buffer pool
@@ -310,29 +322,29 @@ DB::connection('mysql_read')->table('users')->where(...)->first();
 
 ### Permission Check Latency (p50/p95/p99)
 
-| Configuration | P50 | P95 | P99 | DB Queries/sec |
-|---------------|-----|-----|-----|----------------|
-| **No optimizations** | 280ms | 850ms | 2.1s | 10,000 |
-| **Caching only** | 18ms | 45ms | 120ms | 150 |
-| **Caching + JSON** | 12ms | 32ms | 75ms | 100 |
-| **Full optimizations** | 8ms | 22ms | 48ms | 50 |
+| Configuration          | P50   | P95   | P99   | DB Queries/sec |
+| ---------------------- | ----- | ----- | ----- | -------------- |
+| **No optimizations**   | 280ms | 850ms | 2.1s  | 10,000         |
+| **Caching only**       | 18ms  | 45ms  | 120ms | 150            |
+| **Caching + JSON**     | 12ms  | 32ms  | 75ms  | 100            |
+| **Full optimizations** | 8ms   | 22ms  | 48ms  | 50             |
 
 ### Cache Hit Rates
 
-| Entity Type | Hit Rate | Miss Reason |
-|-------------|----------|-------------|
-| Users | 99.2% | Permission updates, TTL expiry |
-| Articles | 97.8% | Higher churn rate |
-| TeamMembers | 99.7% | Stable permissions |
+| Entity Type | Hit Rate | Miss Reason                    |
+| ----------- | -------- | ------------------------------ |
+| Users       | 99.2%    | Permission updates, TTL expiry |
+| Articles    | 97.8%    | Higher churn rate              |
+| TeamMembers | 99.7%    | Stable permissions             |
 
 ### Database Impact
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| CPU usage | 75% | 18% | 76% ↓ |
-| Query latency (avg) | 185ms | 8ms | 95% ↓ |
-| Connection pool | 92% full | 25% full | 73% ↓ |
-| Monthly cost (AWS RDS) | $4,200 | $850 | 80% ↓ |
+| Metric                 | Before   | After    | Improvement |
+| ---------------------- | -------- | -------- | ----------- |
+| CPU usage              | 75%      | 18%      | 76% ↓       |
+| Query latency (avg)    | 185ms    | 8ms      | 95% ↓       |
+| Connection pool        | 92% full | 25% full | 73% ↓       |
+| Monthly cost (AWS RDS) | $4,200   | $850     | 80% ↓       |
 
 ---
 
@@ -539,6 +551,7 @@ var_dump(strlen(json_encode($user->allowed_permissions)));
 **Solutions**:
 
 1. **Use role-based permissions** for common sets:
+
    ```php
    // Instead of 50 individual permissions per user
    $user->setPermissionsFromRole('admin'); // Grants preset permissions

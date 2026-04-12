@@ -63,7 +63,7 @@ class HasAll implements SubjectActionGuardInterface
             // LAYER 2: Distributed cache (Redis/Memcached)
             // TTL from config, defaults to 300 seconds (5 minutes)
             // Balances freshness vs performance - adjust based on your needs
-            $cacheTtl = config('authorization.entity_cache_ttl', 300);
+            $cacheTtl = config('akindutire-authorization.entity_cache_ttl', 300);
 
             $subject = Cache::remember($cacheKey, $cacheTtl, function () {
                 // Create fresh model instance for querying

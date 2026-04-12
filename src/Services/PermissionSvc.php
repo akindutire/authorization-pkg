@@ -29,8 +29,8 @@ class PermissionSvc
 
     public function __construct()
     {
-        $this->roleAllowedPermissionLookupIndex = config('authorization.column_names.allowed_permissions', 'allowed_permissions');
-        $this->subjectRevokedPermissionLookupIndex = config('authorization.column_names.revoked_permissions', 'revoked_permissions');
+        $this->roleAllowedPermissionLookupIndex = config('akindutire-authorization.column_names.allowed_permissions', 'allowed_permissions');
+        $this->subjectRevokedPermissionLookupIndex = config('akindutire-authorization.column_names.revoked_permissions', 'revoked_permissions');
     }
 
     /**
@@ -128,7 +128,7 @@ class PermissionSvc
     public function getAbilities(): array
     {
         // Load from config if available
-        $defaultActions = config("authorization.abilities", []);
+        $defaultActions = config("akindutire-authorization.abilities", []);
 
         if (!is_array($defaultActions)) {
             throw new \Exception("Default abilities must be an array, check your configuration");

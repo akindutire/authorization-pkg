@@ -51,7 +51,7 @@ trait HasPermissions
                 Cache::forget($entityCacheKey);
 
                 // Clear caches for additional lookup properties (uuid, email, etc.)
-                $cacheKeys = config('authorization.cache_keys', ['uuid', 'email', 'slug']);
+                $cacheKeys = config('akindutire-authorization.cache_keys', ['uuid', 'email', 'slug']);
                 foreach ($cacheKeys as $property) {
                     if (isset($model->$property)) {
                         $cacheKey = sprintf(

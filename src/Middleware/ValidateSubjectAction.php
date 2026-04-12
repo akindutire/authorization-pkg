@@ -116,7 +116,7 @@ class ValidateSubjectAction
                 if (!$permissionAttrib->validate()) {
                     throw new ValidateSubjectActionException(
                         config(
-                            'authorization.exception.message',
+                            'akindutire-authorization.exception.message',
                             "Access denied, you do not have enough permission to perform this action, contact your administrator"
                         )
                     );

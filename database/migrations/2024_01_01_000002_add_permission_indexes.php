@@ -25,11 +25,11 @@ return new class extends Migration
     public function up()
     {
         // ⚠️ CUSTOMIZE THIS: List all tables using HasPermissions trait
-        $tables = config('authorization.indexed_tables', ['users']);
+        $tables = config('akindutire-authorization.indexed_tables', ['users']);
 
         // Properties commonly used for subject lookups
         // These will get indexed for faster WHERE clauses
-        $indexedProperties = config('authorization.indexed_properties', ['uuid', 'email', 'slug']);
+        $indexedProperties = config('akindutire-authorization.indexed_properties', ['uuid', 'email', 'slug']);
 
         foreach ($tables as $tableName) {
             // Verify table exists before attempting to add indexes
@@ -94,8 +94,8 @@ return new class extends Migration
      */
     public function down()
     {
-        $tables = config('authorization.indexed_tables', ['users']);
-        $indexedProperties = config('authorization.indexed_properties', ['uuid', 'email', 'slug']);
+        $tables = config('akindutire-authorization.indexed_tables', ['users']);
+        $indexedProperties = config('akindutire-authorization.indexed_properties', ['uuid', 'email', 'slug']);
 
         foreach ($tables as $tableName) {
             if (!Schema::hasTable($tableName)) {

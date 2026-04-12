@@ -20,7 +20,7 @@ class AuthorizationServiceProvider extends ServiceProvider
     {
         // Publish configuration file
         $this->publishes([
-            __DIR__.'/../config/authorization.php' => config_path('authorization.php'),
+            __DIR__.'/../config/akindutire-authorization.php' => config_path('akindutire-authorization.php'),
         ], 'authorization-config');
 
         // Publish migrations
@@ -55,8 +55,8 @@ class AuthorizationServiceProvider extends ServiceProvider
     {
         // Merge configuration
         $this->mergeConfigFrom(
-            __DIR__.'/../config/authorization.php',
-            'authorization'
+            __DIR__.'/../config/akindutire-authorization.php',
+            'akindutire-authorization'
         );
 
         // Register PermissionSvc (NOT as singleton for thread-safety)
