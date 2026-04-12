@@ -23,7 +23,16 @@ class PermissionSvc
     private ?Model $subject = null;
 
     // Memoization cache: stores resolved permissions for the current subject
-    // Prevents redundant explode/array_diff operations within same request
+    //
+    // WHEN IT HELPS: Only useful for manual service reuse pattern:
+    //   $svc = App::make(PermissionSvc::class)->subject($user, null, null);
+    //   $svc->hasAny(['can_edit']);     // Computes permissions
+    //   $svc->hasAll(['can_view']);     // Reuses cached permissions
+    //
+    // WHEN IT DOESN'T HELP: Attribute usage (normal flow):
+    //   App::make(PermissionSvc::class)->subject($user, null, null)->hasAny([...]);
+    //   ↑ Fresh instance = no reuse. Entity caching happens at attribute level instead.
+    //
     // Cleared when subject changes to maintain accuracy
     private ?array $cachedResolvedPermissions = null;
 
@@ -37,15 +46,14 @@ class PermissionSvc
      * Get the resolved permissions for the subject
      * (allowed_permissions minus revoked_permissions)
      *
-     * Uses memoization to prevent redundant computation within same request.
      * Supports both JSON arrays and legacy CSV string formats.
+     * Memoized to optimize manual service reuse (see $cachedResolvedPermissions comment).
      *
      * @return array Effective permissions after subtracting revoked from allowed
      */
     private function subjectResolvedPermission(): array
     {
-        // Return memoized result if available
-        // Prevents redundant string parsing when multiple permission checks occur
+        // Return memoized result if available (only helps with manual service reuse)
         if ($this->cachedResolvedPermissions !== null) {
             return $this->cachedResolvedPermissions;
         }
@@ -202,7 +210,9 @@ class PermissionSvc
      * Performance optimizations:
      * - array_flip() for O(1) lookups instead of O(n) in_array()
      * - Short-circuit on first match (no need to check remaining permissions)
-     * - Memoized permission resolution (via subjectResolvedPermission)
+     *
+     * Note: Entity-level caching happens in HasAny/HasAll attributes.
+     * Permission resolution memoization only helps with manual service reuse.
      *
      * @param array $actions Permission strings to check (e.g., ['can_edit', 'can_delete'])
      * @return bool True if subject has at least one of the specified permissions
@@ -249,7 +259,9 @@ class PermissionSvc
      * Performance optimizations:
      * - Uses array_intersect_key for efficient set comparison
      * - O(n + m) complexity instead of O(n × m) nested loops
-     * - Memoized permission resolution (via subjectResolvedPermission)
+     *
+     * Note: Entity-level caching happens in HasAny/HasAll attributes.
+     * Permission resolution memoization only helps with manual service reuse.
      *
      * @param array $actions Permission strings to check (e.g., ['can_edit', 'can_delete'])
      * @return bool True only if subject has ALL specified permissions
