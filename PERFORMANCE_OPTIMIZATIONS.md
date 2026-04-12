@@ -43,7 +43,7 @@ Repeat for: Articles, TeamMembers, Posts, and any other entity with permissions.
 
 ## Configuration Updates
 
-Update `config/authorization.php` with your tables and properties:
+Update `config/akindutire-authorization.php` with your tables and properties:
 
 ```php
 'indexed_tables' => [
@@ -193,7 +193,7 @@ User::chunk(1000, function($users) {
 - [ ] Update models with `$casts`
 - [ ] Run migrations (`php artisan migrate`)
 - [ ] Configure Redis (`CACHE_DRIVER=redis`)
-- [ ] Update `config/authorization.php` with your tables/properties
+- [ ] Update `config/akindutire-authorization.php` with your tables/properties
 - [ ] Run `php artisan permission:cache` in deployment script
 - [ ] Monitor cache hit rate (target: >95%)
 - [ ] Monitor permission check latency (target: <50ms p99)

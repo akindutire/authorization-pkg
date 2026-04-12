@@ -45,7 +45,7 @@ Request → Middleware → Cache Check → Entity Lookup → Permission Validati
 **Solution**: Two-tier caching system
 
 ```php
-// config/authorization.php
+// config/akindutire-authorization.php
 'entity_cache_ttl' => 300, // 5 minutes (adjust based on your needs)
 ```
 
@@ -174,7 +174,7 @@ $attribute = new ($metadata['attribute_class'])(...$metadata['attribute_args']);
 **Solution**: Automatic index creation via migration
 
 ```php
-// config/authorization.php
+// config/akindutire-authorization.php
 'indexed_tables' => ['users', 'articles', 'team_members'],
 'indexed_properties' => ['uuid', 'email', 'slug'],
 ```
@@ -249,7 +249,7 @@ foreach ($actions as $action) {
 ### Small Applications (<100k entities, <1k req/sec)
 
 ```php
-// config/authorization.php
+// config/akindutire-authorization.php
 'entity_cache_ttl' => 300,           // 5 minutes
 'indexed_tables' => ['users'],       // Minimal indexing
 'indexed_properties' => ['id'],      // Primary key only
@@ -507,7 +507,7 @@ if (count($queries) > 1) {
 redis-cli ping # Should return PONG
 
 # 2. Verify cache TTL isn't too low
-# config/authorization.php
+# config/akindutire-authorization.php
 'entity_cache_ttl' => 300, // Increase if needed
 
 # 3. Check for cache stampede

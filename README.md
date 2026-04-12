@@ -47,7 +47,7 @@ The package will auto-register via Laravel's package discovery.
 php artisan vendor:publish --tag=authorization-config
 ```
 
-This creates `config/authorization.php` for customizing default permissions.
+This creates `config/akindutire-authorization.php` for customizing default permissions.
 
 ### 2. Publish and Run Migrations
 
@@ -256,7 +256,7 @@ $permissions = EntityPermission::getDefaultActions('owner');
 
 ### Configuring Default Actions per Role
 
-In `config/authorization.php`:
+In `config/akindutire-authorization.php`:
 
 ```php
 'default_actions' => [
@@ -356,7 +356,7 @@ try {
 }
 ```
 
-Customize the exception message in `config/authorization.php`:
+Customize the exception message in `config/akindutire-authorization.php`:
 
 ```php
 'exception' => [
@@ -372,7 +372,7 @@ This package is built for production applications at scale.
 ### Configuration for Production
 
 ```php
-// config/authorization.php
+// config/akindutire-authorization.php
 return [
     // Cache entity lookups for 5 minutes (adjust based on your needs)
     'entity_cache_ttl' => 300,
