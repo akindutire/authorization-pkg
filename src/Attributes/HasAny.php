@@ -6,6 +6,7 @@ use Akindutire\Authorization\Attributes\Interfaces\SubjectActionGuardInterface;
 use Akindutire\Authorization\Services\PermissionSvc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Attribute to check if a subject has ANY of the specified permissions
@@ -34,29 +35,71 @@ class HasAny implements SubjectActionGuardInterface
     /**
      * Validate if the subject has any of the required permissions
      *
+     * Uses a multi-layer caching strategy:
+     * 1. Request-level cache (prevents duplicate lookups in same request)
+     * 2. Distributed cache (Redis/Memcached for cross-request optimization)
+     *
      * @return bool
      * @throws \Exception
      */
     public function validate(): bool
     {
-        $entity = App::make($this->subjectDefinition);
+        // Generate cache key for entity lookup
+        // Format: entity.{ModelClass}.{property}.{value}
+        // Example: entity.App\Models\Article.id.123
+        $cacheKey = sprintf(
+            'entity.%s.%s.%s',
+            str_replace('\\', '.', $this->subjectDefinition), // Normalize namespace separators
+            $this->subjectDefinitionProperty,
+            $this->subjectValue
+        );
 
-        if (!($entity instanceof Model)) {
-            throw new \Exception(
-                sprintf(
-                    "Cannot resolve action subject, ensure the FQCN in arg #2 is an instance of '%s'",
-                    Model::class
-                )
-            );
+        // LAYER 1: Request-level cache
+        // Check if we've already fetched this entity in the current request
+        // This prevents duplicate DB queries when multiple middleware/checks run
+        $subject = app('request')->attributes->get($cacheKey);
+
+        if (!$subject) {
+            // LAYER 2: Distributed cache (Redis/Memcached)
+            // TTL from config, defaults to 300 seconds (5 minutes)
+            // Balances freshness vs performance - adjust based on your needs
+            $cacheTtl = config('authorization.entity_cache_ttl', 300);
+
+            $subject = Cache::remember($cacheKey, $cacheTtl, function () {
+                // Create fresh model instance for querying
+                $entity = App::make($this->subjectDefinition);
+
+                // Validate that the provided class is actually an Eloquent model
+                if (!($entity instanceof Model)) {
+                    throw new \Exception(
+                        sprintf(
+                            "Cannot resolve action subject, ensure the FQCN in arg #2 is an instance of '%s'",
+                            Model::class
+                        )
+                    );
+                }
+
+                // Perform the database query
+                // This is the ONLY place we hit the DB (unless cache is cold/expired)
+                return $entity->where($this->subjectDefinitionProperty, $this->subjectValue)->first();
+            });
+
+            // Store in request-level cache for subsequent checks in same request
+            // Request attributes persist only for the current HTTP request lifecycle
+            app('request')->attributes->set($cacheKey, $subject);
         }
 
-        $subject = $entity->where($this->subjectDefinitionProperty, $this->subjectValue)->first();
-
+        // If entity doesn't exist, deny access immediately
+        // No need to check permissions if the subject isn't found
         if (!$subject) {
             return false;
         }
 
-        return (App::make(PermissionSvc::class))->subject($subject)->hasAny($this->actions);
+        // Delegate permission checking to PermissionSvc
+        // The service handles the business logic of allowed vs revoked permissions
+        return (App::make(PermissionSvc::class))
+            ->subject($subject, null, null)
+            ->hasAny($this->actions);
     }
 
     /**
