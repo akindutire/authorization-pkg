@@ -1,0 +1,63 @@
+{
+    "name": "akindutire/authorization-pkg",
+    "description": "A modern, attribute-based authorization package for Laravel 9+ that works with any Eloquent model using PHP 8 attributes",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "laravel",
+        "authorization",
+        "permissions",
+        "roles",
+        "php8",
+        "attributes",
+        "eloquent"
+    ],
+    "authors": [
+        {
+            "name": "Akindutire Ayomide",
+            "email": "akinsamuel33@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1|^8.2|^8.3",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/database": "^9.0|^10.0|^11.0|^12.0",
+        "illuminate/http": "^9.0|^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^7.0|^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^9.5|^10.0|^11.0",
+        "mockery/mockery": "^1.5",
+        "phpstan/phpstan": "^1.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Akindutire\\Authorization\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Akindutire\\Authorization\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage",
+        "analyse": "vendor/bin/phpstan analyse src --level=5"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Akindutire\\Authorization\\AuthorizationServiceProvider"
+            ],
+            "aliases": {
+                "EntityPermission": "Akindutire\\Authorization\\Facades\\EntityPermission"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
