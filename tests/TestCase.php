@@ -46,7 +46,7 @@ abstract class TestCase extends Orchestra
         ]);
 
         // Setup authorization config
-        $app['config']->set('authorization.default_actions', [
+        $app['config']->set('akindutire-authorization.default_actions', [
             'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
             'admin' => ['can_update', 'can_create', 'can_view'],
             'member' => ['can_view'],
