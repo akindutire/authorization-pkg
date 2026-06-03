@@ -47,7 +47,7 @@
 ],</code></pre>
 
                 <h3>Option 2: Role-Based Permission Groups</h3>
-                <p>Define role templates with associated permissions. Great for role-based authorization:</p>
+                <p>Define role templates for reference and documentation purposes:</p>
                 <pre><code>'abilities' => [
     'owner' => [
         'can_update_company',
@@ -63,8 +63,15 @@
     ],
 ],</code></pre>
 
-                <p>With role-based setup, you can grant entire role templates:</p>
-                <pre><code>$user->allowPermission('admin'); // Grants: can_invite_member, can_view_pitch</code></pre>
+                <div class="alert alert-info">
+                    <strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities()</code>. You must still explicitly grant permissions using <code>grantPermission()</code>.
+                </div>
+
+                <p><strong>Example:</strong></p>
+                <pre><code>// Get admin permissions from config
+$adminPerms = EntityPermission::getAbilities()['admin'];
+// Then explicitly grant them
+$user->grantPermission($adminPerms);</code></pre>
 
                 <h2>Column Names</h2>
                 <p>Customize the database column names used for storing permissions:</p>

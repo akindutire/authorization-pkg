@@ -29,28 +29,25 @@
                 <h1>Quick Start Guide</h1>
                 <p>Learn how to implement authorization in your Laravel application in 5 minutes.</p>
 
-                <h2>Step 1: Define Role Abilities</h2>
-                <p>Configure role-based permission templates in <code>config/akindutire-authorization.php</code>:</p>
+                <h2>Step 1: Define Abilities (Optional)</h2>
+                <p>Optionally configure ability templates in <code>config/akindutire-authorization.php</code> for reference:</p>
                 <pre><code>'abilities' => [
     'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
     'admin' => ['can_update', 'can_create', 'can_view'],
     'member' => ['can_view'],
-    'guest' => [],
 ],</code></pre>
+                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities()</code>. They are not automatically applied.</p>
 
-                <h2>Step 2: Grant Permissions to Users</h2>
+                <h2>Step 2: Grant Permissions</h2>
                 <p>Use the <code>HasPermissions</code> trait methods to manage permissions:</p>
-                <pre><code>// Grant individual permissions
-$user->allowPermission(['can_view', 'can_edit']);
+                <pre><code>// Grant permissions to a user
+$user->grantPermission(['can_view', 'can_edit']);
 
-// Grant permissions using a role template
-$user->allowPermission('admin'); // Grants: can_update, can_create, can_view
+// Grant a single permission
+$user->grantPermission('can_delete');
 
-// Explicitly deny a permission (overrides allowed)
-$user->revokePermission(['can_delete']);
-
-// Update permissions atomically
-$user->updatePermission(['can_view', 'can_edit']);</code></pre>
+// Revoke permissions (overrides allowed permissions)
+$user->revokePermission(['can_delete']);</code></pre>
 
                 <h2>Step 3: Protect Routes with Middleware</h2>
                 <p>Add the <code>validate.subject.action</code> middleware to your routes:</p>
@@ -103,8 +100,8 @@ class PostController extends Controller
                 </ul>
 
                 <h2>Step 5: Check Permissions Programmatically</h2>
-                <p>For complex authorization logic, use the service directly:</p>
-                <pre><code>use Akindutire\Authorization\Facades\PermissionSvc;
+                <p>For complex authorization logic, use the facade or model methods:</p>
+                <pre><code>use Akindutire\Authorization\Facades\EntityPermission;
 
 // Check if user has permission
 if ($user->hasPermission('can_edit')) {
@@ -116,11 +113,10 @@ if ($user->hasAllPermissions(['can_update', 'can_delete'])) {
     // Allow destructive actions
 }
 
-// Check using the service for model-specific permissions
+// Check using the facade
 $post = Post::find($id);
-$canEdit = PermissionSvc::subject($post)
-    ->action('can_update')
-    ->check();
+$canEdit = EntityPermission::subject($post)
+    ->hasAny(['can_update']);
 
 if ($canEdit) {
     // Allow editing this specific post
@@ -141,22 +137,15 @@ public function render($request, Throwable $exception)
 }</code></pre>
 
                 <h2>Complete Example: Blog System</h2>
-                <pre><code>// 1. Configure roles
-'abilities' => [
-    'author' => ['can_create', 'can_update', 'can_delete', 'can_view'],
-    'editor' => ['can_update', 'can_view'],
-    'reader' => ['can_view'],
-],
+                <pre><code>// 1. Grant permissions to user
+$user->grantPermission(['can_create', 'can_update', 'can_delete', 'can_view']);
 
-// 2. Assign role to user
-$user->allowPermission('author');
-
-// 3. Protect routes
+// 2. Protect routes
 Route::middleware([ValidateSubjectAction::class])->group(function () {
     Route::resource('posts', PostController::class);
 });
 
-// 4. Add attributes to controller
+// 3. Add attributes to controller
 class PostController extends Controller
 {
     #[HasAll(['can_create'])]

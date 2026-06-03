@@ -154,14 +154,14 @@ CACHE_DRIVER=array # Lost on every request</code></pre>
                     <li><code>cache_keys</code>: Ensures cache invalidation when permissions change</li>
                 </ul>
 
-                <h2>7. Use Atomic Operations for Concurrent Updates</h2>
+                <h2>7. Use grantPermission for Atomic Updates</h2>
 
                 <h3>✅ Do (Race-condition safe):</h3>
-                <pre><code>// Using allowPermission (atomic)
-$article->allowPermission('can_broadcast');
+                <pre><code>// Using grantPermission (atomic database operations)
+$article->grantPermission('can_broadcast');
 
-// Using updatePermission (atomic with database-level locking)
-$article->updatePermission(['can_broadcast', 'can_publish']);</code></pre>
+// Grant multiple permissions
+$article->grantPermission(['can_broadcast', 'can_publish']);</code></pre>
 
                 <h3>❌ Don't (Race condition possible):</h3>
                 <pre><code>// Manual array manipulation - NOT atomic
@@ -171,7 +171,7 @@ $article->allowed_permissions = json_encode($perms);
 $article->save(); // Race condition possible!</code></pre>
 
                 <div class="alert alert-warning">
-                    <strong>Why it matters:</strong> In high-concurrency scenarios (multiple admins updating permissions simultaneously), atomic operations prevent lost updates. Use <code>updatePermission()</code> for full permission replacement with database-level locking.
+                    <strong>Why it matters:</strong> In high-concurrency scenarios (multiple admins updating permissions simultaneously), atomic operations via <code>grantPermission()</code> prevent lost updates.
                 </div>
 
                 <h2>8. Use Auto-Invalidation for Reflection Cache</h2>

@@ -95,7 +95,7 @@ class User extends Authenticatable
                 <pre><code>php artisan tinker
 
 $user = User::first();
-$user->allowPermission(['can_view', 'can_edit']);
+$user->grantPermission(['can_view', 'can_edit']);
 $user->hasPermission('can_view'); // true</code></pre>
 
                 <h2>Next Steps</h2>
