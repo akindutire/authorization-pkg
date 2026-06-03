@@ -75,23 +75,16 @@ public function show(#[SubjectValue('id')] int $postId)
                 <h2>HasPermissions Trait</h2>
                 <p>Add this trait to any Eloquent model that needs permission management.</p>
 
-                <h3>allowPermission()</h3>
-                <p>Grants permissions to the model. Supports both individual permissions and role-based templates.</p>
-                <pre><code>public function allowPermission(string|array $permissions): bool</code></pre>
+                <h3>grantPermission()</h3>
+                <p>Grants permissions to the model using atomic database operations.</p>
+                <pre><code>public function grantPermission(string|array $permissions): bool</code></pre>
 
                 <p><strong>Examples:</strong></p>
-                <pre><code>// Grant individual permissions
-$user->allowPermission(['can_view', 'can_edit']);
-
-// Grant permissions using role template
-$user->allowPermission('admin'); // Expands to configured abilities
+                <pre><code>// Grant multiple permissions
+$user->grantPermission(['can_view', 'can_edit']);
 
 // Grant single permission
-$user->allowPermission('can_delete');</code></pre>
-
-                <div class="alert alert-info">
-                    <strong>Role Templates:</strong> If the permission matches a key in <code>config('akindutire-authorization.abilities')</code>, it will be expanded to the array of permissions defined for that role.
-                </div>
+$user->grantPermission('can_delete');</code></pre>
 
                 <h3>revokePermission()</h3>
                 <p>Explicitly denies permissions. Revoked permissions override allowed permissions.</p>
@@ -101,29 +94,8 @@ $user->allowPermission('can_delete');</code></pre>
                 <pre><code>// Revoke individual permissions
 $user->revokePermission(['can_delete']);
 
-// Revoke using role template
-$user->revokePermission('admin');
-
 // Revoke single permission
 $user->revokePermission('can_update');</code></pre>
-
-                <h3>updatePermission()</h3>
-                <p>Atomically replaces all allowed permissions with the specified set. Provides race-condition-free updates.</p>
-                <pre><code>public function updatePermission(string|array $permissions): bool</code></pre>
-
-                <p><strong>Examples:</strong></p>
-                <pre><code>// Replace all permissions atomically
-$user->updatePermission(['can_view', 'can_edit']);
-
-// Update using role template
-$user->updatePermission('member');
-
-// Clear all permissions
-$user->updatePermission([]);</code></pre>
-
-                <div class="alert alert-warning">
-                    <strong>Atomic Operation:</strong> This method uses database-level locking to prevent race conditions. It's the recommended way to update permissions in concurrent environments.
-                </div>
 
                 <h3>hasPermission()</h3>
                 <p>Checks if the model has a specific permission (accounting for revocations).</p>
@@ -135,7 +107,7 @@ $user->updatePermission([]);</code></pre>
 }
 
 // Revoked permissions return false
-$user->allowPermission(['can_view', 'can_edit']);
+$user->grantPermission(['can_view', 'can_edit']);
 $user->revokePermission(['can_edit']);
 $user->hasPermission('can_edit'); // false</code></pre>
 
@@ -157,72 +129,52 @@ $user->hasPermission('can_edit'); // false</code></pre>
     // User has at least one permission
 }</code></pre>
 
-                <h2>PermissionSvc Service</h2>
-                <p>Fluent service for advanced permission checking against specific resources.</p>
+                <h2>EntityPermission Facade</h2>
+                <p>Fluent facade for permission checking against specific models.</p>
 
                 <h3>subject()</h3>
                 <p>Sets the subject (resource) to check permissions against.</p>
-                <pre><code>public function subject(object $subject): static</code></pre>
+                <pre><code>public function subject(object $subject): PermissionSvc</code></pre>
 
                 <p><strong>Examples:</strong></p>
-                <pre><code>use Akindutire\Authorization\Facades\PermissionSvc;
+                <pre><code>use Akindutire\Authorization\Facades\EntityPermission;
 
 $post = Post::find($id);
-PermissionSvc::subject($post)
-    ->action('can_update')
-    ->check();</code></pre>
-
-                <h3>action()</h3>
-                <p>Sets the action/permission to check for.</p>
-                <pre><code>public function action(string|array $action): static</code></pre>
-
-                <p><strong>Examples:</strong></p>
-                <pre><code>// Check single action
-PermissionSvc::subject($post)
-    ->action('can_delete')
-    ->check();
-
-// Check multiple actions (requires ALL)
-PermissionSvc::subject($post)
-    ->action(['can_update', 'can_delete'])
-    ->check();</code></pre>
-
-                <h3>check()</h3>
-                <p>Performs the permission check and returns a boolean result.</p>
-                <pre><code>public function check(): bool</code></pre>
-
-                <p><strong>Examples:</strong></p>
-                <pre><code>$canEdit = PermissionSvc::subject($post)
-    ->action('can_update')
-    ->check();
-
-if ($canEdit) {
-    // Allow editing
-}</code></pre>
+EntityPermission::subject($post)
+    ->hasAny(['can_update']);</code></pre>
 
                 <h3>hasAny()</h3>
-                <p>Checks if the user has ANY of the specified permissions for the subject.</p>
+                <p>Checks if the subject has ANY of the specified permissions.</p>
                 <pre><code>public function hasAny(array $actions): bool</code></pre>
 
                 <p><strong>Examples:</strong></p>
-                <pre><code>$canAccess = PermissionSvc::subject($post)
+                <pre><code>$canAccess = EntityPermission::subject($post)
     ->hasAny(['can_view', 'can_edit']);
 
 if ($canAccess) {
-    // User can either view or edit
+    // Subject can either view or edit
 }</code></pre>
 
                 <h3>hasAll()</h3>
-                <p>Checks if the user has ALL of the specified permissions for the subject.</p>
+                <p>Checks if the subject has ALL of the specified permissions.</p>
                 <pre><code>public function hasAll(array $actions): bool</code></pre>
 
                 <p><strong>Examples:</strong></p>
-                <pre><code>$canDestroy = PermissionSvc::subject($post)
+                <pre><code>$canDestroy = EntityPermission::subject($post)
     ->hasAll(['can_update', 'can_delete']);
 
 if ($canDestroy) {
-    // User can both update and delete
+    // Subject can both update and delete
 }</code></pre>
+
+                <h3>getAbilities()</h3>
+                <p>Retrieves the ability templates from config.</p>
+                <pre><code>public function getAbilities(): array</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>// Get all abilities configuration
+$abilities = EntityPermission::getAbilities();
+// Returns: ['owner' => [...], 'admin' => [...], ...]</code></pre>
 
                 <h2>Artisan Commands</h2>
 
