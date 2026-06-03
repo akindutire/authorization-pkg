@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Akindutire Authorization</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>Akindutire Authorization</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="quickstart.html">Quick Start</a></li>
+                <li><a href="api.html" class="active">API Reference</a></li>
+                <li><a href="configuration.html">Configuration</a></li>
+                <li><a href="best-practices.html">Best Practices</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="doc-container">
+            <div class="doc-content">
+                <h1>API Reference</h1>
+                <p>Complete reference for all attributes, traits, and services.</p>
+
+                <h2>Attributes</h2>
+
+                <h3>#[HasAny]</h3>
+                <p>Requires the user to have at least ONE of the specified permissions.</p>
+                <pre><code>#[HasAny(
+    array $actions,              // Required: Array of permission names
+    ?string $model = null,       // Optional: Eloquent model class
+    ?string $modelColumn = null  // Optional: Column linking resource to user
+)]</code></pre>
+
+                <p><strong>Example:</strong></p>
+                <pre><code>#[HasAny(['can_view', 'can_edit'], Post::class, 'user_id')]
+public function show(#[SubjectValue('id')] int $id)
+{
+    // User needs either 'can_view' OR 'can_edit' permission
+}</code></pre>
+
+                <h3>#[HasAll]</h3>
+                <p>Requires the user to have ALL of the specified permissions.</p>
+                <pre><code>#[HasAll(
+    array $actions,              // Required: Array of permission names
+    ?string $model = null,       // Optional: Eloquent model class
+    ?string $modelColumn = null  // Optional: Column linking resource to user
+)]</code></pre>
+
+                <p><strong>Example:</strong></p>
+                <pre><code>#[HasAll(['can_update', 'can_delete'], Post::class, 'user_id')]
+public function destroy(#[SubjectValue('id')] int $id)
+{
+    // User needs both 'can_update' AND 'can_delete' permissions
+}</code></pre>
+
+                <h3>#[SubjectValue]</h3>
+                <p>Marks a controller parameter as the resource identifier for permission checking.</p>
+                <pre><code>#[SubjectValue(string $parameterName)]</code></pre>
+
+                <p><strong>Example:</strong></p>
+                <pre><code>#[HasAny(['can_view'], Post::class, 'user_id')]
+public function show(#[SubjectValue('id')] int $postId)
+{
+    // The 'id' route parameter is used to fetch the Post model
+}</code></pre>
+
+                <h2>HasPermissions Trait</h2>
+                <p>Add this trait to any Eloquent model that needs permission management.</p>
+
+                <h3>allowPermission()</h3>
+                <p>Grants permissions to the model. Supports both individual permissions and role-based templates.</p>
+                <pre><code>public function allowPermission(string|array $permissions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>// Grant individual permissions
+$user->allowPermission(['can_view', 'can_edit']);
+
+// Grant permissions using role template
+$user->allowPermission('admin'); // Expands to configured abilities
+
+// Grant single permission
+$user->allowPermission('can_delete');</code></pre>
+
+                <div class="alert alert-info">
+                    <strong>Role Templates:</strong> If the permission matches a key in <code>config('akindutire-authorization.abilities')</code>, it will be expanded to the array of permissions defined for that role.
+                </div>
+
+                <h3>revokePermission()</h3>
+                <p>Explicitly denies permissions. Revoked permissions override allowed permissions.</p>
+                <pre><code>public function revokePermission(string|array $permissions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>// Revoke individual permissions
+$user->revokePermission(['can_delete']);
+
+// Revoke using role template
+$user->revokePermission('admin');
+
+// Revoke single permission
+$user->revokePermission('can_update');</code></pre>
+
+                <h3>updatePermission()</h3>
+                <p>Atomically replaces all allowed permissions with the specified set. Provides race-condition-free updates.</p>
+                <pre><code>public function updatePermission(string|array $permissions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>// Replace all permissions atomically
+$user->updatePermission(['can_view', 'can_edit']);
+
+// Update using role template
+$user->updatePermission('member');
+
+// Clear all permissions
+$user->updatePermission([]);</code></pre>
+
+                <div class="alert alert-warning">
+                    <strong>Atomic Operation:</strong> This method uses database-level locking to prevent race conditions. It's the recommended way to update permissions in concurrent environments.
+                </div>
+
+                <h3>hasPermission()</h3>
+                <p>Checks if the model has a specific permission (accounting for revocations).</p>
+                <pre><code>public function hasPermission(string $permission): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>if ($user->hasPermission('can_edit')) {
+    // User has permission
+}
+
+// Revoked permissions return false
+$user->allowPermission(['can_view', 'can_edit']);
+$user->revokePermission(['can_edit']);
+$user->hasPermission('can_edit'); // false</code></pre>
+
+                <h3>hasAllPermissions()</h3>
+                <p>Checks if the model has all of the specified permissions.</p>
+                <pre><code>public function hasAllPermissions(array $permissions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>if ($user->hasAllPermissions(['can_update', 'can_delete'])) {
+    // User has both permissions
+}</code></pre>
+
+                <h3>hasAnyPermission()</h3>
+                <p>Checks if the model has at least one of the specified permissions.</p>
+                <pre><code>public function hasAnyPermission(array $permissions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>if ($user->hasAnyPermission(['can_view', 'can_edit'])) {
+    // User has at least one permission
+}</code></pre>
+
+                <h2>PermissionSvc Service</h2>
+                <p>Fluent service for advanced permission checking against specific resources.</p>
+
+                <h3>subject()</h3>
+                <p>Sets the subject (resource) to check permissions against.</p>
+                <pre><code>public function subject(object $subject): static</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>use Akindutire\Authorization\Facades\PermissionSvc;
+
+$post = Post::find($id);
+PermissionSvc::subject($post)
+    ->action('can_update')
+    ->check();</code></pre>
+
+                <h3>action()</h3>
+                <p>Sets the action/permission to check for.</p>
+                <pre><code>public function action(string|array $action): static</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>// Check single action
+PermissionSvc::subject($post)
+    ->action('can_delete')
+    ->check();
+
+// Check multiple actions (requires ALL)
+PermissionSvc::subject($post)
+    ->action(['can_update', 'can_delete'])
+    ->check();</code></pre>
+
+                <h3>check()</h3>
+                <p>Performs the permission check and returns a boolean result.</p>
+                <pre><code>public function check(): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>$canEdit = PermissionSvc::subject($post)
+    ->action('can_update')
+    ->check();
+
+if ($canEdit) {
+    // Allow editing
+}</code></pre>
+
+                <h3>hasAny()</h3>
+                <p>Checks if the user has ANY of the specified permissions for the subject.</p>
+                <pre><code>public function hasAny(array $actions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>$canAccess = PermissionSvc::subject($post)
+    ->hasAny(['can_view', 'can_edit']);
+
+if ($canAccess) {
+    // User can either view or edit
+}</code></pre>
+
+                <h3>hasAll()</h3>
+                <p>Checks if the user has ALL of the specified permissions for the subject.</p>
+                <pre><code>public function hasAll(array $actions): bool</code></pre>
+
+                <p><strong>Examples:</strong></p>
+                <pre><code>$canDestroy = PermissionSvc::subject($post)
+    ->hasAll(['can_update', 'can_delete']);
+
+if ($canDestroy) {
+    // User can both update and delete
+}</code></pre>
+
+                <h2>Artisan Commands</h2>
+
+                <h3>make:permission-migration</h3>
+                <p>Generates a migration file to add permission columns to a table.</p>
+                <pre><code>php artisan make:permission-migration {table}</code></pre>
+
+                <p><strong>Example:</strong></p>
+                <pre><code>php artisan make:permission-migration users
+
+# Creates migration: xxxx_xx_xx_add_permission_fields_to_users_table.php</code></pre>
+
+                <h3>permission:cache</h3>
+                <p>Pre-warms reflection metadata cache for all routes. Run during deployment for optimal performance.</p>
+                <pre><code>php artisan permission:cache</code></pre>
+
+                <p><strong>Output:</strong></p>
+                <pre><code>Warming permission reflection caches...
+✓ Permission cache warmed successfully
+  Cached: 45 routes
+  Skipped: 12 routes</code></pre>
+
+                <h3>permission:cache-clear</h3>
+                <p>Clears all permission-related caches (reflection metadata and entity permissions).</p>
+                <pre><code>php artisan permission:cache-clear</code></pre>
+
+                <p><strong>Output:</strong></p>
+                <pre><code>Clearing permission caches...
+✓ Permission caches cleared successfully
+  Reflection cache cleared: 45 keys
+  Entity cache cleared: 128 keys</code></pre>
+
+                <div class="alert alert-info">
+                    <strong>Auto-Invalidation:</strong> When enabled in config, reflection caches automatically update when attributes change. Cache clearing is only needed when disabling auto-invalidation or troubleshooting.
+                </div>
+
+                <h2>Middleware</h2>
+
+                <h3>ValidateSubjectAction</h3>
+                <p>Automatically validates permissions based on controller method attributes.</p>
+                <pre><code>use Akindutire\Authorization\Middleware\ValidateSubjectAction;
+
+Route::middleware([ValidateSubjectAction::class])->group(function () {
+    Route::resource('posts', PostController::class);
+});</code></pre>
+
+                <p><strong>Behavior:</strong></p>
+                <ul>
+                    <li>Parses <code>#[HasAny]</code> and <code>#[HasAll]</code> attributes from controller methods</li>
+                    <li>Caches reflection metadata for performance (sub-microsecond for cached checks)</li>
+                    <li>Automatically fetches the subject model using <code>#[SubjectValue]</code> parameter</li>
+                    <li>Returns 403 Forbidden if user lacks required permissions</li>
+                    <li>Passes request through if authorized</li>
+                </ul>
+
+                <h2>Performance Characteristics</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Operation</th>
+                            <th>Performance</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cached reflection lookup</td>
+                            <td>&lt;1μs</td>
+                            <td>Sub-microsecond for warmed cache</td>
+                        </tr>
+                        <tr>
+                            <td>First reflection parse</td>
+                            <td>~100-200μs</td>
+                            <td>One-time cost per route</td>
+                        </tr>
+                        <tr>
+                            <td>Permission check</td>
+                            <td>~10-20μs</td>
+                            <td>Simple array operations</td>
+                        </tr>
+                        <tr>
+                            <td>Database query</td>
+                            <td>~1-5ms</td>
+                            <td>Standard Eloquent query</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="alert alert-success">
+                    <strong>Production Ready:</strong> With warmed caches, authorization checks add negligible overhead to your application (typically &lt;1ms per request).
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="quickstart.html">Quick Start</a></li>
+                        <li><a href="api.html">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="best-practices.html">Best Practices</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Akindutire Authorization. Built with Laravel.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 namespace Akindutire\Authorization\Attributes;
 
-use Akindutire\Authorization\Attributes\Interfaces\SubjectActionGuardInterface;
+use Akindutire\Authorization\Attributes\Interfaces\{SubjectModel,SubjectActionGuardInterface};
 use Akindutire\Authorization\Services\PermissionSvc;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\App;
@@ -53,41 +53,53 @@ class HasAll implements SubjectActionGuardInterface
             $this->subjectDefinitionProperty,
             $this->subjectValue
         );
+        
+        $cacheTtl = config('akindutire-authorization.entity_cache_ttl', 300);
 
-        // LAYER 1: Request-level cache
-        // Check if we've already fetched this entity in the current request
-        // This prevents duplicate DB queries when multiple middleware/checks run
-        $subject = app('request')->attributes->get($cacheKey);
+        $subjectVals = Cache::remember($cacheKey, $cacheTtl, function () {
+            // Create fresh model instance for querying
+            $entity = App::make($this->subjectDefinition);
 
-        if (!$subject) {
-            // LAYER 2: Distributed cache (Redis/Memcached)
-            // TTL from config, defaults to 300 seconds (5 minutes)
-            // Balances freshness vs performance - adjust based on your needs
-            $cacheTtl = config('akindutire-authorization.entity_cache_ttl', 300);
+            // Validate that the provided class is actually an Eloquent model
+            if (!($entity instanceof Model)) {
+                throw new \Exception(
+                    sprintf(
+                        "Cannot resolve action subject, ensure the FQCN in arg #2 is an instance of '%s'",
+                        Model::class
+                    )
+                );
+            }
 
-            $subject = Cache::remember($cacheKey, $cacheTtl, function () {
-                // Create fresh model instance for querying
-                $entity = App::make($this->subjectDefinition);
+            // Perform the database query
+            // This is the ONLY place we hit the DB (unless cache is cold/expired)
+            $a = config('akindutire-authorization.column_names.allowed_permissions');
+            $b = config('akindutire-authorization.column_names.revoked_permissions');
+            $s = $entity->where($this->subjectDefinitionProperty, $this->subjectValue)
+                ->select(
+                    $a, $b
+                )->first();
+            if (!$s) {
+                // Entity not found, return null to cache this result
+                return null;
+            }
 
-                // Validate that the provided class is actually an Eloquent model
-                if (!($entity instanceof Model)) {
-                    throw new \Exception(
-                        sprintf(
-                            "Cannot resolve action subject, ensure the FQCN in arg #2 is an instance of '%s'",
-                            Model::class
-                        )
-                    );
-                }
+            if (!isset($s->{$a}) || !isset($s->{$b})) {
+                throw new \Exception(
+                    sprintf(
+                        "The model '%s' must have the properties '%s' and '%s' for permission checking and must be defined as columns in the database and included in the model's fillable or casts as arrays",
+                        $this->subjectDefinition,
+                        $a,
+                        $b
+                    )
+                );
+            }
+          
+            
+            return ['a' => $s->{$a}, 'r' => $s->{$b}];
+        });
 
-                // Perform the database query
-                // This is the ONLY place we hit the DB (unless cache is cold/expired)
-                return $entity->where($this->subjectDefinitionProperty, $this->subjectValue)->first();
-            });
-
-            // Store in request-level cache for subsequent checks in same request
-            // Request attributes persist only for the current HTTP request lifecycle
-            app('request')->attributes->set($cacheKey, $subject);
-        }
+            
+        $subject = new SubjectModel($subjectVals['a'] ?? [], $subjectVals['r'] ?? []);
 
         // If entity doesn't exist, deny access immediately
         // No need to check permissions if the subject isn't found
@@ -98,7 +110,7 @@ class HasAll implements SubjectActionGuardInterface
         // Delegate permission checking to PermissionSvc
         // The service handles the business logic of allowed vs revoked permissions
         return (App::make(PermissionSvc::class))
-            ->subject($subject, null, null)
+            ->subject($subject)
             ->hasAll($this->actions);
     }
 

@@ -537,31 +537,61 @@ DB::transaction(function() {
 
 ### Issue: High Memory Usage
 
-**Symptoms**: PHP processes using >512MB RAM
+**Symptoms**: PHP processes using >512MB RAM, slow permission checks
 
 **Diagnosis**:
 
 ```php
 // Check for large permission arrays
 $user = User::find(1);
-var_dump(strlen(json_encode($user->allowed_permissions)));
+$jsonSize = strlen(json_encode($user->allowed_permissions));
+$count = count($user->allowed_permissions);
+
+echo "Permission JSON: {$jsonSize} bytes, {$count} items\n";
 // If >10KB, permissions list is too large
+// Recommended: <10KB (250-400 permissions)
 ```
 
-**Solutions**:
+**Solutions for Granular Permission Systems**:
 
-1. **Use role-based permissions** for common sets:
+1. **Enable Size Validation**:
 
    ```php
-   // Instead of 50 individual permissions per user
-   $user->setPermissionsFromRole('admin'); // Grants preset permissions
+   // config/akindutire-authorization.php
+   'max_permission_size_bytes' => 10240, // 10KB limit
+   'max_permission_count' => 500,        // Max 500 permissions per entity
    ```
 
-2. **Implement permission inheritance**:
+   The package will throw `InvalidArgumentException` when limits are exceeded.
+
+2. **Use Permission Namespacing**:
+
    ```php
-   // Users inherit team permissions + individual permissions
-   $userPerms = array_merge($user->team->permissions, $user->allowed_permissions);
+   // ❌ Verbose: Too many individual permissions
+   ['can_edit', 'can_delete', 'can_publish', 'can_archive', ...]
+
+   // ✅ Namespaced: Organized and compact
+   ['article.edit', 'article.delete', 'article.publish', 'analytics.view']
    ```
+
+3. **Use Shorter Permission Names**:
+
+   ```php
+   // Concise names reduce storage by 3x
+   'article.edit' instead of 'can_edit_article_metadata'
+   ```
+
+4. **Re-evaluate Permission Granularity**:
+
+   ```php
+   // ❌ Too granular (500+ permissions)
+   ['article.edit.title', 'article.edit.body', 'article.edit.meta', ...]
+
+   // ✅ Feature-level (manageable)
+   ['article.edit', 'article.delete', 'article.publish']
+   ```
+
+**See [DOCUMENTATION.md](DOCUMENTATION.md#high-memory-usage) for complete examples.**
 
 ---
 

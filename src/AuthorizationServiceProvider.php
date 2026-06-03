@@ -3,6 +3,7 @@
 namespace Akindutire\Authorization;
 
 use Akindutire\Authorization\Console\Commands\ClearPermissionCache;
+use Akindutire\Authorization\Console\Commands\MakePermissionMigration;
 use Akindutire\Authorization\Console\Commands\WarmPermissionCache;
 use Akindutire\Authorization\Middleware\ValidateSubjectAction;
 use Akindutire\Authorization\Services\PermissionSvc;
@@ -23,16 +24,6 @@ class AuthorizationServiceProvider extends ServiceProvider
             __DIR__.'/../config/akindutire-authorization.php' => config_path('akindutire-authorization.php'),
         ], 'authorization-config');
 
-        // Publish migrations
-        $this->publishes([
-            __DIR__.'/../database/migrations/' => database_path('migrations'),
-        ], 'authorization-migrations');
-
-        // Load migrations
-        if ($this->app->runningInConsole()) {
-            $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        }
-
         // Register middleware
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('validate.subject.action', ValidateSubjectAction::class);
@@ -40,6 +31,7 @@ class AuthorizationServiceProvider extends ServiceProvider
         // Register artisan commands
         if ($this->app->runningInConsole()) {
             $this->commands([
+                MakePermissionMigration::class,
                 WarmPermissionCache::class,
                 ClearPermissionCache::class,
             ]);

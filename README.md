@@ -5,6 +5,7 @@ A modern, attribute-based authorization package for Laravel 9+ that works with a
 ## Features
 
 - **Attribute-based authorization** - Use PHP 8 attributes for clean, declarative permission checks
+- **Auto-invalidating cache** - Automatically detects attribute changes without manual cache clearing
 - **Model-agnostic** - Works with any Eloquent model (User, Article, TeamMember, Post, etc.)
 - **Flexible subject resolution** - Lookup subjects by any property (id, uuid, email, slug, etc.)
 - **Permission inheritance** - Supports allowed and revoked permissions
@@ -49,23 +50,23 @@ php artisan vendor:publish --tag=authorization-config
 
 This creates `config/akindutire-authorization.php` for customizing default permissions.
 
-### 2. Publish and Run Migrations
+### 2. Generate and Run Migrations
+
+Generate a migration for each table that needs permissions:
 
 ```bash
-php artisan vendor:publish --tag=authorization-migrations
+php artisan make:permission-migration users
+php artisan make:permission-migration articles
+php artisan make:permission-migration team_members
+```
+
+This creates timestamped migrations that add JSON permission columns with database-specific indexes for optimal performance.
+
+Then run the migrations:
+
+```bash
 php artisan migrate
 ```
-
-This creates JSON permission columns with database-specific indexes for optimal performance.
-
-**Important**: Update the migration file to specify your table name before running:
-
-```php
-// database/migrations/2024_01_01_000001_add_permission_fields_to_table.php
-$tableName = 'users'; // ⚠️ Change to: 'articles', 'team_members', etc.
-```
-
-Copy the migration for each entity table that needs permissions.
 
 ### 3. Add Trait and Configure Models
 
@@ -96,10 +97,11 @@ class Article extends Model
 }
 ```
 
-**The `$casts` configuration is critical for:**
-- JSON storage (vs legacy CSV strings)
-- Automatic cache invalidation
-- Optimal performance at scale
+**Note:** The `$casts` configuration is now automatically added by the trait, but you can explicitly define it for better clarity and IDE support:
+
+- Enables JSON storage (vs legacy CSV strings)
+- Ensures automatic cache invalidation
+- Provides optimal performance at scale
 
 ### 4. Register Middleware
 
@@ -174,14 +176,17 @@ class CompanyController extends Controller
 ### Attribute Parameters
 
 **`#[HasAny(array $actions, string $modelClass, string $lookupProperty)]`**
+
 - `$actions` - Array of permission strings to check
 - `$modelClass` - The Eloquent model class to lookup (e.g., `TeamMember::class`)
 - `$lookupProperty` - The property to use for lookup (default: `'id'`)
 
 **`#[SubjectValue(string $key)]`**
+
 - `$key` - The request parameter key to extract
 
 The middleware extracts the value in this priority order:
+
 1. `$request->input($key)` - Form data (POST/PUT)
 2. `$request->route($key)` - Route parameters (e.g., `/users/{member_id}`)
 3. `$request->query($key)` - Query strings (e.g., `?member_id=123`)
@@ -194,21 +199,23 @@ The middleware extracts the value in this priority order:
 ```php
 $user = User::find(1);
 
-// Set permissions directly
-$user->updatePermission(['can_view', 'can_edit', 'can_delete']);
+// Grant multiple permissions at once
+$user->grantPermission(['can_view', 'can_edit', 'can_delete']);
 
 // Grant a single permission
 $user->grantPermission('can_update_company');
 
-// Set permissions from a role (uses config)
-$user->setPermissionsFromRole('owner');
+
 ```
 
 #### Revoking Permissions
 
 ```php
-// Revoke a permission
+// Revoke a single permission (atomic)
 $user->revokePermission('can_delete');
+
+// Revoke multiple permissions (batch)
+$user->revokePermission(['can_delete', 'can_edit']);
 ```
 
 #### Checking Permissions
@@ -256,10 +263,11 @@ $permissions = EntityPermission::getDefaultActions('owner');
 
 ### Configuring Default Actions per Role
 
+This feature is more informational and does not persist to database
 In `config/akindutire-authorization.php`:
 
 ```php
-'default_actions' => [
+'abilities' => [
     'owner' => [
         'can_update_company',
         'can_invite_member',
@@ -278,12 +286,6 @@ In `config/akindutire-authorization.php`:
 ],
 ```
 
-Then assign permissions from role:
-
-```php
-$teamMember->setPermissionsFromRole('owner');
-```
-
 ## How It Works
 
 1. **Middleware reads attributes** - `ValidateSubjectAction` uses reflection to read method attributes
@@ -293,7 +295,7 @@ $teamMember->setPermissionsFromRole('owner');
 5. **Resolution** - Compares `allowed_permissions` - `revoked_permissions`
 6. **Authorization** - Returns 403 if unauthorized, continues if authorized
 
-### Request Flow Example
+### Request Flow Example 1
 
 ```php
 // Route
@@ -313,6 +315,30 @@ public function update(#[SubjectValue('member_id')] Request $request)
 // 1. Middleware extracts: $request->input('member_id') → 123
 // 2. Finds subject: TeamMember::where('id', 123)->first()
 // 3. Checks: $teamMember->allowed_permissions contains 'can_update'?
+// 4. If yes → continue, if no → throw 403
+```
+
+### Request Flow Example 2
+
+```php
+// Route: GET /company/123
+
+// web.php
+Route::get('/company/{company_id}', [CompanyController::class, 'get']);
+
+// Controller - Route params can be annotated directly as they are scalar values
+#[HasAny([AppActions::CAN_VIEW->value], Company::class, 'id')]
+public function get(#[SubjectValue()] $company_id)
+{
+    // $company_id is extracted directly from route parameter
+    $company = Company::find($company_id);
+    // Process...
+}
+
+// Flow:
+// 1. Middleware extracts: $company_id from route parameter → 123
+// 2. Finds subject: Company::where('id', 123)->first()
+// 3. Checks: $company->allowed_permissions contains 'can_view'?
 // 4. If yes → continue, if no → throw 403
 ```
 
@@ -388,13 +414,50 @@ return [
 ];
 ```
 
+### Automatic Cache Invalidation
+
+The package automatically detects changes to attributes and invalidates the cache - no manual clearing needed!
+
+When you change:
+
+- Attribute parameters (e.g., different actions, subject class, or lookup property)
+- SubjectValue parameter names
+- Add/remove attributes from controller methods
+
+The cache automatically updates on the next request. No need to run `permission:cache-clear` after modifying attributes.
+
+**How it works:**
+
+```php
+// Before: Manual cache clearing required
+#[HasAny(['can_edit'], TeamMember::class, 'id')]
+// Deploy → run permission:cache-clear → works
+
+// Now: Automatic invalidation
+#[HasAny(['can_edit', 'can_delete'], TeamMember::class, 'id')]  // Changed!
+// Deploy → works immediately (cache key includes hash of attributes)
+```
+
+**Configuration:**
+
+```php
+// config/akindutire-authorization.php
+'auto_invalidate_reflection_cache' => true,  // Enabled by default
+```
+
+To disable (requires manual clearing after attribute changes):
+
+```bash
+PERMISSION_AUTO_INVALIDATE=false
+```
+
 ### Deployment Commands
 
 ```bash
-# After deployment: warm reflection metadata cache
+# Optional: Warm reflection metadata cache (if disabled auto-invalidation)
 php artisan permission:cache
 
-# Clear caches when needed
+# Manual cache clearing (rarely needed with auto-invalidation)
 php artisan permission:cache-clear
 php artisan permission:cache-clear --reflection  # Only reflection metadata
 php artisan permission:cache-clear --entities    # Only entity caches
@@ -413,12 +476,12 @@ REDIS_PORT=6379
 
 ### Performance Benchmarks
 
-| Metric | Without Optimization | With Optimization | Improvement |
-|--------|---------------------|-------------------|-------------|
-| Permission check latency (p50) | 280ms | 8ms | **97% faster** |
-| Database queries/sec (10k req/sec) | 10,000 | 50 | **99.5% reduction** |
-| Cache hit rate | 0% | 99%+ | - |
-| Monthly infrastructure cost (AWS) | $4,200 | $850 | **80% savings** |
+| Metric                             | Without Optimization | With Optimization | Improvement         |
+| ---------------------------------- | -------------------- | ----------------- | ------------------- |
+| Permission check latency (p50)     | 280ms                | 8ms               | **97% faster**      |
+| Database queries/sec (10k req/sec) | 10,000               | 50                | **99.5% reduction** |
+| Cache hit rate                     | 0%                   | 99%+              | -                   |
+| Monthly infrastructure cost (AWS)  | $4,200               | $850              | **80% savings**     |
 
 **Tested with**: 50M users, 10M articles, 10k requests/second
 
@@ -429,6 +492,7 @@ For detailed performance tuning, monitoring, and troubleshooting:
 📖 **[Read the complete Scalability Guide →](SCALABILITY.md)**
 
 Topics covered:
+
 - Multi-layer caching strategy
 - Database optimization & indexing
 - Deployment best practices
@@ -439,6 +503,7 @@ Topics covered:
 ## Real-World Use Cases
 
 ### E-commerce Platform
+
 ```php
 // Articles can self-broadcast
 #[HasAny(['can_broadcast'], Article::class, 'id')]
@@ -448,6 +513,7 @@ public function broadcast(#[SubjectValue('article_id')] Request $request) {
 ```
 
 ### Multi-tenant SaaS
+
 ```php
 // Team members with varying permissions
 #[HasAll(['can_invite', 'can_manage_billing'], TeamMember::class, 'uuid')]
@@ -457,6 +523,7 @@ public function manageBilling(#[SubjectValue('member_uuid')] Request $request) {
 ```
 
 ### Content Management
+
 ```php
 // Posts with analytics capabilities
 #[HasAny(['can_autosend_for_analytics'], Post::class, 'slug')]

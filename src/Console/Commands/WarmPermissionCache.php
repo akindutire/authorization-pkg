@@ -6,12 +6,16 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Akindutire\Authorization\Attributes\Interfaces\SubjectActionGuardInterface;
 use Akindutire\Authorization\Attributes\Interfaces\SubjectValueInterface;
+use Akindutire\Authorization\Support\ReflectionCacheKeyGenerator;
 
 /**
  * Pre-warm authorization caches for optimal performance
  *
  * This command builds reflection metadata cache for all routes.
  * Run this during deployment to ensure first requests don't experience cache misses.
+ *
+ * Supports auto-invalidation: When enabled, cache keys include a hash of attribute
+ * configuration, ensuring cache is automatically updated when attributes change.
  *
  * Usage:
  *   php artisan permission:cache        # Warm caches
@@ -65,12 +69,8 @@ class WarmPermissionCache extends Command
             try {
                 [$controller, $method] = explode('@', $action);
 
-                // Generate cache key
-                $cacheKey = sprintf(
-                    'reflection.%s.%s',
-                    str_replace('\\', '.', $controller),
-                    $method
-                );
+                // Generate cache key using shared logic (includes hash when auto-invalidation enabled)
+                $cacheKey = ReflectionCacheKeyGenerator::generate($controller, $method);
 
                 // Check if already cached (skip if warm)
                 if (Cache::has($cacheKey)) {

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation - Akindutire Authorization</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>Akindutire Authorization</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="installation.html" class="active">Installation</a></li>
+                <li><a href="quickstart.html">Quick Start</a></li>
+                <li><a href="api.html">API Reference</a></li>
+                <li><a href="configuration.html">Configuration</a></li>
+                <li><a href="best-practices.html">Best Practices</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="doc-container">
+            <div class="doc-content">
+                <h1>Installation</h1>
+                <p>Get started with Akindutire Authorization in your Laravel application.</p>
+
+                <h2>Requirements</h2>
+                <ul>
+                    <li>PHP 8.1 or higher</li>
+                    <li>Laravel 9.0 or higher</li>
+                    <li>Composer</li>
+                </ul>
+
+                <h2>Install via Composer</h2>
+                <p>Install the package using Composer:</p>
+                <pre><code>composer require akindutire/authorization</code></pre>
+
+                <h2>Publish Configuration</h2>
+                <p>Publish the configuration file to customize the package settings:</p>
+                <pre><code>php artisan vendor:publish --tag=akindutire-authorization-config</code></pre>
+
+                <p>This will create a configuration file at <code>config/akindutire-authorization.php</code>.</p>
+
+                <h2>Database Setup</h2>
+
+                <h3>Generate Migration</h3>
+                <p>Create a migration to add permission columns to your model's table:</p>
+                <pre><code>php artisan make:permission-migration users</code></pre>
+
+                <p>This generates a migration file that adds two columns:</p>
+                <ul>
+                    <li><code>allowed_permissions</code> - JSON array of granted permissions</li>
+                    <li><code>revoked_permissions</code> - JSON array of explicitly denied permissions</li>
+                </ul>
+
+                <h3>Run Migrations</h3>
+                <p>Apply the migration to your database:</p>
+                <pre><code>php artisan migrate</code></pre>
+
+                <h3>Custom Column Names</h3>
+                <p>If you need different column names, you can customize them in the migration or configure them in <code>config/akindutire-authorization.php</code>:</p>
+                <pre><code>'column_names' => [
+    'allowed_permissions' => 'permissions',
+    'revoked_permissions' => 'denied_permissions',
+],</code></pre>
+
+                <h2>Add Trait to Model</h2>
+                <p>Add the <code>HasPermissions</code> trait to any Eloquent model that needs authorization:</p>
+                <pre><code>use Akindutire\Authorization\Traits\HasPermissions;
+
+class User extends Authenticatable
+{
+    use HasPermissions;
+
+    // Your model code...
+}</code></pre>
+
+                <h2>Warm Reflection Cache (Optional)</h2>
+                <p>For production environments, pre-warm the reflection cache during deployment:</p>
+                <pre><code>php artisan permission:cache</code></pre>
+
+                <p>This eliminates cache misses on first requests and improves initial response times.</p>
+
+                <div class="alert alert-info">
+                    <strong>Auto-Invalidation:</strong> When auto-invalidation is enabled in config, caches automatically update when attributes change. No manual cache clearing needed during development.
+                </div>
+
+                <h2>Verify Installation</h2>
+                <p>Test that everything is working by checking permissions in tinker:</p>
+                <pre><code>php artisan tinker
+
+$user = User::first();
+$user->allowPermission(['can_view', 'can_edit']);
+$user->hasPermission('can_view'); // true</code></pre>
+
+                <h2>Next Steps</h2>
+                <ul>
+                    <li><a href="quickstart.html">Follow the Quick Start guide</a> to implement your first authorization check</li>
+                    <li><a href="configuration.html">Review configuration options</a> to customize the package</li>
+                    <li><a href="api.html">Explore the API Reference</a> for detailed method documentation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="quickstart.html">Quick Start</a></li>
+                        <li><a href="api.html">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="best-practices.html">Best Practices</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Akindutire Authorization. Built with Laravel.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

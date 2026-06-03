@@ -4,6 +4,7 @@ namespace Akindutire\Authorization\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Akindutire\Authorization\Support\ReflectionCacheKeyGenerator;
 
 /**
  * Clear all authorization-related caches
@@ -13,10 +14,13 @@ use Illuminate\Support\Facades\Cache;
  * - Reflection metadata caches (controller attributes)
  * - Permission check result caches
  *
+ * Note: With auto-invalidation enabled (default), reflection caches are automatically
+ * invalidated when attributes change. Manual clearing is rarely needed.
+ *
  * Run this after:
- * - Deploying new code with permission changes
- * - Modifying controller attributes
- * - Changing authorization logic
+ * - Disabling auto-invalidation and modifying controller attributes
+ * - Bulk permission changes requiring immediate cache clearing
+ * - Troubleshooting cache-related issues
  */
 class ClearPermissionCache extends Command
 {
@@ -114,11 +118,8 @@ class ClearPermissionCache extends Command
 
             [$controller, $method] = explode('@', $action);
 
-            $cacheKey = sprintf(
-                'reflection.%s.%s',
-                str_replace('\\', '.', $controller),
-                $method
-            );
+            // Generate cache key using shared logic (includes hash when auto-invalidation enabled)
+            $cacheKey = ReflectionCacheKeyGenerator::generate($controller, $method);
 
             Cache::forget($cacheKey);
         }

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Akindutire Authorization</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>Akindutire Authorization</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="quickstart.html">Quick Start</a></li>
+                <li><a href="api.html">API Reference</a></li>
+                <li><a href="configuration.html" class="active">Configuration</a></li>
+                <li><a href="best-practices.html">Best Practices</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="doc-container">
+            <div class="doc-content">
+                <h1>Configuration</h1>
+                <p>Customize the authorization package to fit your application's needs.</p>
+
+                <p>Publish the configuration file:</p>
+                <pre><code>php artisan vendor:publish --tag=akindutire-authorization-config</code></pre>
+
+                <p>This creates <code>config/akindutire-authorization.php</code> with all available options.</p>
+
+                <h2>Abilities Configuration</h2>
+                <p>Define available permissions for your application. Two formats are supported:</p>
+
+                <h3>Option 1: Simple Permission List</h3>
+                <p>Recommended for most applications. Define a flat list of available permissions:</p>
+                <pre><code>'abilities' => [
+    'can_edit',
+    'can_delete',
+    'can_broadcast',
+    'can_autosend_for_analytics',
+],</code></pre>
+
+                <h3>Option 2: Role-Based Permission Groups</h3>
+                <p>Define role templates with associated permissions. Great for role-based authorization:</p>
+                <pre><code>'abilities' => [
+    'owner' => [
+        'can_update_company',
+        'can_invite_member',
+        'can_remove_member',
+    ],
+    'admin' => [
+        'can_invite_member',
+        'can_view_pitch',
+    ],
+    'member' => [
+        'can_view_pitch',
+    ],
+],</code></pre>
+
+                <p>With role-based setup, you can grant entire role templates:</p>
+                <pre><code>$user->allowPermission('admin'); // Grants: can_invite_member, can_view_pitch</code></pre>
+
+                <h2>Column Names</h2>
+                <p>Customize the database column names used for storing permissions:</p>
+                <pre><code>'column_names' => [
+    'allowed_permissions' => 'allowed_permissions',
+    'revoked_permissions' => 'revoked_permissions',
+],</code></pre>
+
+                <p>Different entity types can use different column names:</p>
+                <pre><code>// For users
+'allowed_permissions' => 'allowed_permissions'
+
+// For articles (customize per model if needed)
+'allowed_permissions' => 'capabilities'
+'revoked_permissions' => 'restrictions'</code></pre>
+
+                <div class="alert alert-warning">
+                    <strong>Important:</strong> Ensure your migration creates columns matching these names, and update model configurations accordingly.
+                </div>
+
+                <h2>Cache Configuration</h2>
+
+                <h3>Entity Cache TTL</h3>
+                <p>Controls how long entity lookups are cached (in seconds):</p>
+                <pre><code>'entity_cache_ttl' => env('PERMISSION_CACHE_TTL', 300),</code></pre>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Value</th>
+                            <th>Effect</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>60-300</td>
+                            <td>Balanced performance</td>
+                            <td>Most applications</td>
+                        </tr>
+                        <tr>
+                            <td>600-3600</td>
+                            <td>Maximum performance</td>
+                            <td>Read-heavy workloads</td>
+                        </tr>
+                        <tr>
+                            <td>0-30</td>
+                            <td>Near real-time updates</td>
+                            <td>Frequent permission changes</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Override in <code>.env</code>:</p>
+                <pre><code>PERMISSION_CACHE_TTL=300</code></pre>
+
+                <h3>Auto-Invalidate Reflection Cache</h3>
+                <p>Automatically detect when attributes change and update caches:</p>
+                <pre><code>'auto_invalidate_reflection_cache' => env('PERMISSION_AUTO_INVALIDATE', true),</code></pre>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Setting</th>
+                            <th>Behavior</th>
+                            <th>Recommended For</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>true</code></td>
+                            <td>Cache keys include attribute hash</td>
+                            <td>Development & Production</td>
+                        </tr>
+                        <tr>
+                            <td><code>false</code></td>
+                            <td>Cache persists until manual clear</td>
+                            <td>Legacy behavior only</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="alert alert-success">
+                    <strong>Recommended:</strong> Keep this enabled (true). It eliminates the need to manually clear caches when updating attributes, while adding only ~5-10μs overhead on first request.
+                </div>
+
+                <p>Override in <code>.env</code>:</p>
+                <pre><code>PERMISSION_AUTO_INVALIDATE=true</code></pre>
+
+                <h3>Cache Keys</h3>
+                <p>Properties to index for cache invalidation:</p>
+                <pre><code>'cache_keys' => [
+    'uuid',
+    'email',
+    'slug',
+    // Add other properties used for entity lookups
+],</code></pre>
+
+                <p>Add any properties used in your <code>#[HasAny]</code> or <code>#[HasAll]</code> attributes:</p>
+                <pre><code>// If you use:
+#[HasAny($actions, User::class, 'username')]
+
+// Add to cache_keys:
+'cache_keys' => [
+    'uuid',
+    'email',
+    'slug',
+    'username', // ← Add this
+],</code></pre>
+
+                <h2>Database Index Configuration</h2>
+
+                <h3>Indexed Tables</h3>
+                <p>Tables that use the <code>HasPermissions</code> trait:</p>
+                <pre><code>'indexed_tables' => [
+    'users',
+    'articles',
+    'team_members',
+    'posts',
+],</code></pre>
+
+                <div class="alert alert-info">
+                    <strong>Performance:</strong> Adding tables to this list enables performance indexes. Critical for applications with &gt;1M rows.
+                </div>
+
+                <h3>Indexed Properties</h3>
+                <p>Properties commonly used in WHERE clauses and attribute lookups:</p>
+                <pre><code>'indexed_properties' => [
+    'uuid',
+    'email',
+    'slug',
+    // Add properties used in #[HasAny(..., Model::class, 'property')]
+],</code></pre>
+
+                <p>These should match properties used in your attributes:</p>
+                <pre><code>#[HasAny($actions, User::class, 'uuid')]
+                                     ^^^^^^
+                                     Add to indexed_properties</code></pre>
+
+                <h2>Permission Size Limits</h2>
+
+                <h3>Max Permission Size (Bytes)</h3>
+                <p>Maximum size of permission JSON in bytes:</p>
+                <pre><code>'max_permission_size_bytes' => env('PERMISSION_MAX_SIZE_BYTES', 10240), // 10KB</code></pre>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Value</th>
+                            <th>Approx. Permissions</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>10240 (10KB)</td>
+                            <td>250-400 permissions</td>
+                            <td>Default (recommended)</td>
+                        </tr>
+                        <tr>
+                            <td>5120 (5KB)</td>
+                            <td>125-200 permissions</td>
+                            <td>Memory-constrained</td>
+                        </tr>
+                        <tr>
+                            <td>null</td>
+                            <td>Unlimited</td>
+                            <td>Disable validation</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>Override in <code>.env</code>:</p>
+                <pre><code>PERMISSION_MAX_SIZE_BYTES=10240</code></pre>
+
+                <h3>Max Permission Count</h3>
+                <p>Maximum number of individual permissions per entity:</p>
+                <pre><code>'max_permission_count' => env('PERMISSION_MAX_COUNT', 500),</code></pre>
+
+                <p>Override in <code>.env</code>:</p>
+                <pre><code>PERMISSION_MAX_COUNT=500</code></pre>
+
+                <div class="alert alert-warning">
+                    <strong>Need more than 500 permissions?</strong> Consider:
+                    <ul>
+                        <li>Permission namespacing (e.g., 'article.edit', 'article.delete')</li>
+                        <li>Bitwise permission encoding for ultra-compact storage</li>
+                        <li>External permission storage (dedicated permissions table)</li>
+                    </ul>
+                </div>
+
+                <h2>Exception Handling</h2>
+                <p>Configure how authorization exceptions should be handled:</p>
+                <pre><code>'exception' => [
+    'message' => env(
+        'PERMISSION_EXCEPTION_MESSAGE',
+        'Access denied, you do not have enough permission to perform this action, contact your administrator'
+    ),
+    'code' => 403,
+],</code></pre>
+
+                <p>Customize the error message in <code>.env</code>:</p>
+                <pre><code>PERMISSION_EXCEPTION_MESSAGE="You don't have permission to do that."</code></pre>
+
+                <h2>Environment Variables</h2>
+                <p>Summary of all available environment variables:</p>
+                <pre><code># Cache configuration
+PERMISSION_CACHE_TTL=300
+PERMISSION_AUTO_INVALIDATE=true
+
+# Size limits
+PERMISSION_MAX_SIZE_BYTES=10240
+PERMISSION_MAX_COUNT=500
+
+# Exception handling
+PERMISSION_EXCEPTION_MESSAGE="Access denied, contact your administrator"</code></pre>
+
+                <h2>Configuration Examples</h2>
+
+                <h3>High-Performance Production</h3>
+                <pre><code>// config/akindutire-authorization.php
+'entity_cache_ttl' => 3600, // 1 hour
+'auto_invalidate_reflection_cache' => true,
+
+// .env
+PERMISSION_CACHE_TTL=3600
+PERMISSION_AUTO_INVALIDATE=true</code></pre>
+
+                <h3>Real-Time Permissions</h3>
+                <pre><code>// config/akindutire-authorization.php
+'entity_cache_ttl' => 30, // 30 seconds
+'auto_invalidate_reflection_cache' => true,
+
+// .env
+PERMISSION_CACHE_TTL=30
+PERMISSION_AUTO_INVALIDATE=true</code></pre>
+
+                <h3>Development Environment</h3>
+                <pre><code>// config/akindutire-authorization.php
+'entity_cache_ttl' => 0, // No caching
+'auto_invalidate_reflection_cache' => true,
+
+// .env
+PERMISSION_CACHE_TTL=0
+PERMISSION_AUTO_INVALIDATE=true</code></pre>
+
+                <div class="alert alert-info">
+                    <strong>Tip:</strong> Use different values per environment by setting them in your <code>.env</code> files rather than modifying the config file directly.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="quickstart.html">Quick Start</a></li>
+                        <li><a href="api.html">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="best-practices.html">Best Practices</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Akindutire Authorization. Built with Laravel.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

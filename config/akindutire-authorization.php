@@ -13,23 +13,41 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default Abilities
+    | Abilities Configuration
     |--------------------------------------------------------------------------
     |
     | Define available permissions for your application.
     | These can be assigned to any entity (User, Article, TeamMember, etc.)
     |
-    | Example:
-    |   'can_update_profile',
-    |   'can_delete_account',
-    |   'can_receive_notifications',
-    |   'can_broadcast',
-    |   'can_autosend_for_analytics',
+    | Option 1: Simple permission list (recommended for most applications)
+    |   'abilities' => [
+    |       'can_edit',
+    |       'can_delete',
+    |       'can_broadcast',
+    |       'can_autosend_for_analytics',
+    |   ],
+    |
+    | Option 2: Role-based permission groups (for role-based authorization)
+    |   'abilities' => [
+    |       'owner' => [
+    |           'can_update_company',
+    |           'can_invite_member',
+    |           'can_remove_member',
+    |       ],
+    |       'admin' => [
+    |           'can_invite_member',
+    |           'can_view_pitch',
+    |       ],
+    |       'member' => [
+    |           'can_view_pitch',
+    |       ],
+    |   ],
+    |
+    | With role-based setup, use: EntityPermission::getDefaultActions('owner')
     |
     */
     'abilities' => [
-        // Define your application-wide permissions here
-        // Example: 'can_edit', 'can_delete', 'can_view', etc.
+        // Define your application-wide permissions or role-based permission groups here
     ],
 
     /*
@@ -66,8 +84,16 @@ return [
     |   - Add any properties used in #[HasAny/HasAll] lookups
     |   - Example: ['uuid', 'email', 'slug', 'username']
     |
+    | auto_invalidate_reflection_cache: Automatically detect attribute changes
+    |   - When true: Cache keys include a hash of attribute parameters
+    |   - When false: Cache persists until manual clearing (old behavior)
+    |   - Recommended: true (eliminates need for permission:cache-clear after attribute changes)
+    |   - Performance: Adds ~5-10μs overhead on first request to generate hash
+    |
     */
     'entity_cache_ttl' => env('PERMISSION_CACHE_TTL', 300),
+
+    'auto_invalidate_reflection_cache' => env('PERMISSION_AUTO_INVALIDATE', true),
 
     'cache_keys' => [
         'uuid',
@@ -104,6 +130,31 @@ return [
         'slug',
         // Add other lookup properties
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permission Size Limits
+    |--------------------------------------------------------------------------
+    |
+    | Enforce limits on permission list sizes to prevent memory issues.
+    |
+    | max_permission_size_bytes: Maximum size of permission JSON in bytes
+    |   - Prevents oversized permission arrays (>10KB can cause memory issues)
+    |   - Default: 10240 bytes (10KB) ≈ 250-400 permissions
+    |   - Set to null to disable size validation
+    |
+    | max_permission_count: Maximum number of individual permissions
+    |   - Recommended: 100-500 permissions per entity
+    |   - Set to null to disable count validation
+    |
+    | IMPORTANT: If you need more than 500 permissions per entity, consider:
+    |   1. Permission categories/namespacing (e.g., 'article.edit', 'article.delete')
+    |   2. Bitwise permission encoding for ultra-compact storage
+    |   3. External permission storage (dedicated permissions table)
+    |
+    */
+    'max_permission_size_bytes' => env('PERMISSION_MAX_SIZE_BYTES', 10240), // 10KB
+    'max_permission_count' => env('PERMISSION_MAX_COUNT', 500),
 
     /*
     |--------------------------------------------------------------------------

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start - Akindutire Authorization</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>Akindutire Authorization</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="quickstart.html" class="active">Quick Start</a></li>
+                <li><a href="api.html">API Reference</a></li>
+                <li><a href="configuration.html">Configuration</a></li>
+                <li><a href="best-practices.html">Best Practices</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="doc-container">
+            <div class="doc-content">
+                <h1>Quick Start Guide</h1>
+                <p>Learn how to implement authorization in your Laravel application in 5 minutes.</p>
+
+                <h2>Step 1: Define Role Abilities</h2>
+                <p>Configure role-based permission templates in <code>config/akindutire-authorization.php</code>:</p>
+                <pre><code>'abilities' => [
+    'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
+    'admin' => ['can_update', 'can_create', 'can_view'],
+    'member' => ['can_view'],
+    'guest' => [],
+],</code></pre>
+
+                <h2>Step 2: Grant Permissions to Users</h2>
+                <p>Use the <code>HasPermissions</code> trait methods to manage permissions:</p>
+                <pre><code>// Grant individual permissions
+$user->allowPermission(['can_view', 'can_edit']);
+
+// Grant permissions using a role template
+$user->allowPermission('admin'); // Grants: can_update, can_create, can_view
+
+// Explicitly deny a permission (overrides allowed)
+$user->revokePermission(['can_delete']);
+
+// Update permissions atomically
+$user->updatePermission(['can_view', 'can_edit']);</code></pre>
+
+                <h2>Step 3: Protect Routes with Middleware</h2>
+                <p>Add the <code>validate.subject.action</code> middleware to your routes:</p>
+                <pre><code>use Akindutire\Authorization\Middleware\ValidateSubjectAction;
+
+Route::middleware([ValidateSubjectAction::class])->group(function () {
+    Route::get('/posts/{id}', [PostController::class, 'show']);
+    Route::put('/posts/{id}', [PostController::class, 'update']);
+    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
+});</code></pre>
+
+                <h2>Step 4: Add Attributes to Controllers</h2>
+                <p>Use PHP 8 attributes to declaratively define authorization requirements:</p>
+                <pre><code>use Akindutire\Authorization\Attributes\{HasAny, HasAll, SubjectValue};
+
+class PostController extends Controller
+{
+    #[HasAny(['can_view'], Post::class, 'user_id')]
+    public function show(#[SubjectValue('id')] int $id)
+    {
+        $post = Post::findOrFail($id);
+        return view('posts.show', compact('post'));
+    }
+
+    #[HasAll(['can_update'], Post::class, 'user_id')]
+    public function update(
+        Request $request,
+        #[SubjectValue('id')] int $id
+    ) {
+        $post = Post::findOrFail($id);
+        $post->update($request->validated());
+        return redirect()->route('posts.show', $post);
+    }
+
+    #[HasAll(['can_delete'], Post::class, 'user_id')]
+    public function destroy(#[SubjectValue('id')] int $id)
+    {
+        Post::findOrFail($id)->delete();
+        return redirect()->route('posts.index');
+    }
+}</code></pre>
+
+                <h3>Understanding the Attributes</h3>
+                <ul>
+                    <li><code>#[HasAny(['can_view'])]</code> - User needs at least ONE of the listed permissions</li>
+                    <li><code>#[HasAll(['can_update', 'can_delete'])]</code> - User needs ALL listed permissions</li>
+                    <li><code>Post::class</code> - The Eloquent model to check permissions against</li>
+                    <li><code>'user_id'</code> - The column name that links the resource to the user</li>
+                    <li><code>#[SubjectValue('id')]</code> - The route parameter containing the resource ID</li>
+                </ul>
+
+                <h2>Step 5: Check Permissions Programmatically</h2>
+                <p>For complex authorization logic, use the service directly:</p>
+                <pre><code>use Akindutire\Authorization\Facades\PermissionSvc;
+
+// Check if user has permission
+if ($user->hasPermission('can_edit')) {
+    // Allow editing
+}
+
+// Check multiple permissions (requires ALL)
+if ($user->hasAllPermissions(['can_update', 'can_delete'])) {
+    // Allow destructive actions
+}
+
+// Check using the service for model-specific permissions
+$post = Post::find($id);
+$canEdit = PermissionSvc::subject($post)
+    ->action('can_update')
+    ->check();
+
+if ($canEdit) {
+    // Allow editing this specific post
+}</code></pre>
+
+                <h2>Step 6: Handle Unauthorized Access</h2>
+                <p>The middleware automatically returns a 403 response for unauthorized users. Customize the response in your exception handler:</p>
+                <pre><code>// app/Exceptions/Handler.php
+public function render($request, Throwable $exception)
+{
+    if ($exception instanceof AuthorizationException) {
+        return response()->json([
+            'message' => 'You do not have permission to perform this action.'
+        ], 403);
+    }
+
+    return parent::render($request, $exception);
+}</code></pre>
+
+                <h2>Complete Example: Blog System</h2>
+                <pre><code>// 1. Configure roles
+'abilities' => [
+    'author' => ['can_create', 'can_update', 'can_delete', 'can_view'],
+    'editor' => ['can_update', 'can_view'],
+    'reader' => ['can_view'],
+],
+
+// 2. Assign role to user
+$user->allowPermission('author');
+
+// 3. Protect routes
+Route::middleware([ValidateSubjectAction::class])->group(function () {
+    Route::resource('posts', PostController::class);
+});
+
+// 4. Add attributes to controller
+class PostController extends Controller
+{
+    #[HasAll(['can_create'])]
+    public function store(Request $request)
+    {
+        $post = auth()->user()->posts()->create($request->validated());
+        return redirect()->route('posts.show', $post);
+    }
+
+    #[HasAny(['can_view'], Post::class, 'user_id')]
+    public function show(#[SubjectValue('id')] int $id)
+    {
+        $post = Post::with('user')->findOrFail($id);
+        return view('posts.show', compact('post'));
+    }
+
+    #[HasAll(['can_update'], Post::class, 'user_id')]
+    public function update(
+        Request $request,
+        #[SubjectValue('id')] int $id
+    ) {
+        $post = Post::findOrFail($id);
+        $post->update($request->validated());
+        return redirect()->route('posts.show', $post);
+    }
+}</code></pre>
+
+                <div class="alert alert-success">
+                    <strong>That's it!</strong> You now have a fully functional authorization system. The middleware automatically checks permissions, caches reflection metadata, and handles unauthorized access.
+                </div>
+
+                <h2>Next Steps</h2>
+                <ul>
+                    <li><a href="api.html">Explore the complete API Reference</a></li>
+                    <li><a href="configuration.html">Customize configuration options</a></li>
+                    <li><a href="best-practices.html">Learn best practices</a> for production usage</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="quickstart.html">Quick Start</a></li>
+                        <li><a href="api.html">API Reference</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="best-practices.html">Best Practices</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Akindutire Authorization. Built with Laravel.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

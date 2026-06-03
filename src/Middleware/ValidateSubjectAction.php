@@ -5,6 +5,7 @@ namespace Akindutire\Authorization\Middleware;
 use Akindutire\Authorization\Attributes\Interfaces\SubjectActionGuardInterface;
 use Akindutire\Authorization\Attributes\Interfaces\SubjectValueInterface;
 use Akindutire\Authorization\Exceptions\ValidateSubjectActionException;
+use Akindutire\Authorization\Support\ReflectionCacheKeyGenerator;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -16,8 +17,18 @@ use Illuminate\Support\Facades\Cache;
  * This middleware uses reflection to read method attributes and validate
  * that the subject (identified by parameter attributes) has the required permissions.
  *
- * Performance Optimization: Reflection metadata is cached indefinitely (cleared on deployment).
- * This reduces overhead from ~50μs to <1μs per request.
+ * Performance Optimization: Reflection metadata is cached with automatic invalidation.
+ * - First request: ~50μs (reflection + hash generation)
+ * - Subsequent requests: <1μs (cached metadata)
+ * - Auto-invalidation: Cache automatically updates when attribute parameters change
+ *
+ * Auto-Invalidation: When enabled (default), the cache key includes a hash of:
+ * - Attribute class names (HasAny, HasAll)
+ * - Attribute constructor arguments (actions, subject class, property)
+ * - SubjectValue parameter attributes
+ *
+ * This eliminates the need to run `permission:cache-clear` after changing attributes.
+ * Disable via config: 'auto_invalidate_reflection_cache' => false
  */
 class ValidateSubjectAction
 {
@@ -41,10 +52,10 @@ class ValidateSubjectAction
         if ($fullAction !== 'Closure' && $fullAction !== null) {
             [$controller, $method] = explode('@', $fullAction);
 
-            // Generate cache key for this controller method's metadata
-            // Format: reflection.{ControllerClass}.{methodName}
-            $cacheKey = sprintf('reflection.%s.%s', str_replace('\\', '.', $controller), $method);
+            // Generate cache key using shared logic (includes hash when auto-invalidation enabled)
+            $cacheKey = ReflectionCacheKeyGenerator::generate($controller, $method);
 
+            // dd(new \ReflectionMethod($controller, $method));
             // Fetch or build metadata cache
             // Cached forever - cleared via: php artisan permission:cache-clear or app cache clear
             $metadata = Cache::rememberForever($cacheKey, function () use ($controller, $method) {
@@ -73,6 +84,11 @@ class ValidateSubjectAction
                     );
 
                     if (!empty($paramAttrib)) {
+                        // No args needed for a scalar value (e.g., #[SubjectValue]) - use parameter name as value directly
+                        if (count($paramAttrib[0]->getArguments()) == 0) {
+                            $subjectValueKey = $parameter->getName();
+                            break;
+                        }
                         // Extract the key name (e.g., 'member_id' from #[SubjectValue('member_id')])
                         $subjectValueKey = $paramAttrib[0]->getArguments()[0];
                         break;
@@ -104,10 +120,10 @@ class ValidateSubjectAction
                 // Subject value is required for permission check
                 if (is_null($paramValue)) {
                     throw new ValidateSubjectActionException(
-                        "Subject value not found, ensure to set the subject value on the parameter using the SubjectValue attribute"
+                        "Subject value not found, ensure to set the subject value on the parameter using the SubjectValue attribute or key '{$key}' is present in the request data"
                     );
                 }
-
+                
                 // Set the extracted value on the attribute instance
                 $permissionAttrib->setSubjectValue($paramValue);
 

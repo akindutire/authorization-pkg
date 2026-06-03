@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akindutire Authorization - Modern Laravel Permissions</title>
+    <meta name="description" content="A modern, attribute-based authorization package for Laravel 9+ using PHP 8 attributes">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h1>Akindutire Authorization</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="installation.html">Installation</a></li>
+                <li><a href="quickstart.html">Quick Start</a></li>
+                <li><a href="api.html">API</a></li>
+                <li><a href="configuration.html">Configuration</a></li>
+                <li><a href="best-practices.html">Best Practices</a></li>
+                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="hero-title">Modern Authorization for Laravel</h1>
+            <p class="hero-subtitle">Elegant, attribute-based permissions with automatic cache invalidation</p>
+            <div class="hero-buttons">
+                <a href="installation.html" class="btn btn-primary">Get Started</a>
+                <a href="https://github.com/akindutire/authorization-pkg" class="btn btn-secondary" target="_blank">View on GitHub</a>
+            </div>
+            <div class="code-preview">
+                <pre><code>composer require akindutire/authorization-pkg</code></pre>
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Why Choose This Package?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>PHP 8 Attributes</h3>
+                    <p>Clean, declarative syntax using modern PHP attributes instead of middleware chains</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Auto-Invalidating Cache</h3>
+                    <p>Intelligent cache that automatically updates when permissions change - no manual clearing needed</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3>JSON Storage</h3>
+                    <p>Modern JSON arrays instead of CSV strings for better performance and queryability</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Atomic Operations</h3>
+                    <p>Race-condition-free permission updates with database-level locking</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Model Agnostic</h3>
+                    <p>Works with any Eloquent model - User, TeamMember, Article, you name it</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Production Ready</h3>
+                    <p>Comprehensive test suite with 73 passing tests covering all edge cases</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="code-example">
+        <div class="container">
+            <h2 class="section-title">See It In Action</h2>
+            <div class="example-tabs">
+                <button class="tab-btn active" data-tab="controller">Controller</button>
+                <button class="tab-btn" data-tab="model">Model</button>
+                <button class="tab-btn" data-tab="facade">Facade</button>
+            </div>
+
+            <div class="tab-content active" id="controller">
+                <pre><code class="language-php">use Akindutire\Authorization\Attributes\{HasAny, SubjectValue};
+use App\Models\User;
+
+class ArticleController extends Controller
+{
+    #[HasAny(['can_edit', 'can_publish'], User::class, 'id')]
+    public function update(
+        #[SubjectValue('user_id')] Request $request,
+        Article $article
+    ) {
+        // Only users with 'can_edit' OR 'can_publish' permission can access
+        $article->update($request->validated());
+
+        return response()->json($article);
+    }
+}</code></pre>
+            </div>
+
+            <div class="tab-content" id="model">
+                <pre><code class="language-php">use Akindutire\Authorization\Traits\HasPermissions;
+
+class User extends Authenticatable
+{
+    use HasPermissions;
+
+    // $casts automatically added by trait!
+}
+
+// Grant permissions
+$user->grantPermission(['can_edit', 'can_publish']);
+
+// Revoke permissions
+$user->revokePermission('can_publish');
+
+// Check permissions
+if ($user->hasPermission('can_edit')) {
+    // User can edit
+}</code></pre>
+            </div>
+
+            <div class="tab-content" id="facade">
+                <pre><code class="language-php">use Akindutire\Authorization\Facades\EntityPermission;
+
+// Check via facade
+$canEdit = EntityPermission::subject($user)->hasAny(['can_edit']);
+
+// Check all permissions
+$isAdmin = EntityPermission::subject($user)
+    ->hasAll(['can_edit', 'can_delete', 'can_publish']);
+
+// Get role-based defaults
+$permissions = EntityPermission::getDefaultActions('owner');</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">73</div>
+                    <div class="stat-label">Passing Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">PHP 8.1+</div>
+                    <div class="stat-label">Modern PHP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">Laravel 9+</div>
+                    <div class="stat-label">Framework Support</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">&lt;1μs</div>
+                    <div class="stat-label">Cached Lookups</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Get Started?</h2>
+            <p>Install the package and start building secure Laravel applications in minutes</p>
+            <a href="installation.html" class="btn btn-primary btn-large">Read the Documentation</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="quickstart.html">Quick Start</a></li>
+                        <li><a href="api.html">API Reference</a></li>
+                        <li><a href="configuration.html">Configuration</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="best-practices.html">Best Practices</a></li>
+                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>About</h4>
+                    <p>Created by Akindutire Ayomide</p>
+                    <p>MIT Licensed</p>
+                    <p>Version 2.0.0</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

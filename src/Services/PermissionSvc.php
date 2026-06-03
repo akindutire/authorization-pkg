@@ -2,6 +2,7 @@
 
 namespace Akindutire\Authorization\Services;
 
+use Akindutire\Authorization\Attributes\Interfaces\SubjectModel;
 use Akindutire\Authorization\Enums\AppActions;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,14 +14,14 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PermissionSvc
 {
-    // Column name for allowed permissions (configurable per entity type)
-    private string $roleAllowedPermissionLookupIndex;
+    // model key for allowed permissions
+    private string $roleAllowedPermissionLookupIndex = 'allowedPermissions';
 
-    // Column name for revoked permissions (configurable per entity type)
-    private string $subjectRevokedPermissionLookupIndex;
+    // model key for revoked permissions
+    private string $subjectRevokedPermissionLookupIndex = 'revokedPermissions';
 
-    // The current entity being checked (User, Article, TeamMember, etc.)
-    private ?Model $subject = null;
+    // The current entity extracts being checked
+    private ?SubjectModel $subject = null;
 
     // Memoization cache: stores resolved permissions for the current subject
     //
@@ -36,11 +37,7 @@ class PermissionSvc
     // Cleared when subject changes to maintain accuracy
     private ?array $cachedResolvedPermissions = null;
 
-    public function __construct()
-    {
-        $this->roleAllowedPermissionLookupIndex = config('akindutire-authorization.column_names.allowed_permissions', 'allowed_permissions');
-        $this->subjectRevokedPermissionLookupIndex = config('akindutire-authorization.column_names.revoked_permissions', 'revoked_permissions');
-    }
+    public function __construct() { }
 
     /**
      * Get the resolved permissions for the subject
@@ -130,19 +127,18 @@ class PermissionSvc
      * Override this method or configure via config file to customize
      * default permissions
      *
-     * @param string $role
      * @return array
      */
-    public function getAbilities(): array
+    public function getDefaultActions(string $role): array
     {
         // Load from config if available
-        $defaultActions = config("akindutire-authorization.abilities", []);
+        $defaultActions = config("akindutire-authorization.abilities.{$role}", []);
 
         if (!is_array($defaultActions)) {
             throw new \Exception("Default abilities must be an array, check your configuration");
         }
         
-            return $defaultActions;
+        return $defaultActions;
     }
 
     /**
@@ -151,56 +147,38 @@ class PermissionSvc
      * This method is thread-safe: each call creates/modifies a unique service instance.
      * Different entity types can use different column names without interference.
      *
-     * Example:
-     *   Article::find(1) with 'capabilities' column
-     *   User::find(5) with 'allowed_permissions' column
+     * Accepts either:
+     * - SubjectModel instance (used internally by HasAny/HasAll attributes)
+     * - Eloquent model with allowed_permissions and revoked_permissions (facade/manual use)
      *
-     * @param Model $subject The entity to check (User, Article, TeamMember, etc.)
-     * @param string|null $roleAllowedLookupIndex Column name for allowed permissions
-     * @param string|null $subjectRevokedLookupIndex Column name for revoked permissions
+     * Example:
+     *   EntityPermission::subject($user)->hasAny(['can_edit'])
+     *   EntityPermission::subject(new SubjectModel(['can_view'], []))->hasAny(['can_view'])
+     *
+     * @param object $subject The entity to check permissions for (SubjectModel or Eloquent model)
      * @return $this Fluent interface for method chaining
-     * @throws \Exception If required columns don't exist on the model
      */
     public function subject(
-        Model $subject,
-        ?string $roleAllowedLookupIndex = null,
-        ?string $subjectRevokedLookupIndex = null
+        object $subject
     ): static {
+        // Convert Eloquent models to SubjectModel for internal use
+        if (!($subject instanceof SubjectModel)) {
+            $allowedCol = config('akindutire-authorization.column_names.allowed_permissions', 'allowed_permissions');
+            $revokedCol = config('akindutire-authorization.column_names.revoked_permissions', 'revoked_permissions');
+
+            $subject = new SubjectModel(
+                $subject->{$allowedCol} ?? [],
+                $subject->{$revokedCol} ?? []
+            );
+        }
+
         // Clear memoization cache when subject changes
         // Prevents stale permission data if same service instance is reused
         if ($this->subject !== $subject) {
             $this->cachedResolvedPermissions = null;
         }
 
-        // Use provided column names or fall back to config defaults
-        $roleAllowedLookupIndex = $roleAllowedLookupIndex ?? $this->roleAllowedPermissionLookupIndex;
-        $subjectRevokedLookupIndex = $subjectRevokedLookupIndex ?? $this->subjectRevokedPermissionLookupIndex;
-        if (!array_key_exists($roleAllowedLookupIndex, $subject->getAttributes())) {
-            throw new \Exception(
-                sprintf(
-                    "'%s' is required to be a field of '%s', create a migration to include '%s' on the subject's database table",
-                    $roleAllowedLookupIndex,
-                    get_class($subject),
-                    $roleAllowedLookupIndex
-                )
-            );
-        }
-
-        if (!array_key_exists($subjectRevokedLookupIndex, $subject->getAttributes())) {
-            throw new \Exception(
-                sprintf(
-                    "'%s' is required to be a field of '%s', create a migration to include '%s' on the subject's database table",
-                    $subjectRevokedLookupIndex,
-                    get_class($subject),
-                    $subjectRevokedLookupIndex
-                )
-            );
-        }
-
         $this->subject = $subject;
-        $this->roleAllowedPermissionLookupIndex = $roleAllowedLookupIndex;
-        $this->subjectRevokedPermissionLookupIndex = $subjectRevokedLookupIndex;
-
         return $this;
     }
 
@@ -208,7 +186,7 @@ class PermissionSvc
      * Check if the subject has ANY of the specified actions/permissions
      *
      * Performance optimizations:
-     * - array_flip() for O(1) lookups instead of O(n) in_array()
+     * - array_flip() for O(1) lookups
      * - Short-circuit on first match (no need to check remaining permissions)
      *
      * Note: Entity-level caching happens in HasAny/HasAll attributes.
@@ -258,7 +236,7 @@ class PermissionSvc
      *
      * Performance optimizations:
      * - Uses array_intersect_key for efficient set comparison
-     * - O(n + m) complexity instead of O(n × m) nested loops
+     * - O(n + m) complexity
      *
      * Note: Entity-level caching happens in HasAny/HasAll attributes.
      * Permission resolution memoization only helps with manual service reuse.

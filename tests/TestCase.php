@@ -46,7 +46,7 @@ abstract class TestCase extends Orchestra
         ]);
 
         // Setup authorization config
-        $app['config']->set('akindutire-authorization.default_actions', [
+        $app['config']->set('akindutire-authorization.abilities', [
             'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
             'admin' => ['can_update', 'can_create', 'can_view'],
             'member' => ['can_view'],
@@ -64,8 +64,8 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->text('allowed_permissions')->nullable();
-            $table->text('revoked_permissions')->nullable();
+            $table->text('allowed_permissions')->nullable()->default('[]');
+            $table->text('revoked_permissions')->nullable()->default('[]');
             $table->timestamps();
         });
 
@@ -73,8 +73,8 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->foreignId('user_id');
             $table->string('role');
-            $table->text('allowed_permissions')->nullable();
-            $table->text('revoked_permissions')->nullable();
+            $table->text('allowed_permissions')->nullable()->default('[]');
+            $table->text('revoked_permissions')->nullable()->default('[]');
             $table->timestamps();
         });
     }

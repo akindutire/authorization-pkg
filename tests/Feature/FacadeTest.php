@@ -14,7 +14,7 @@ class FacadeTest extends TestCase
         $user = TestUser::create([
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'allowed_permissions' => 'can_view,can_edit',
+            'allowed_permissions' => ['can_view', 'can_edit'],
         ]);
 
         $hasView = EntityPermission::subject($user)->hasAny(['can_view']);
@@ -30,7 +30,7 @@ class FacadeTest extends TestCase
         $user = TestUser::create([
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'allowed_permissions' => 'can_view,can_edit,can_delete',
+            'allowed_permissions' => ['can_view', 'can_edit', 'can_delete'],
         ]);
 
         $hasAll = EntityPermission::subject($user)->hasAll(['can_view', 'can_edit']);
@@ -55,8 +55,8 @@ class FacadeTest extends TestCase
         $user = TestUser::create([
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'allowed_permissions' => 'can_view,can_edit,can_delete',
-            'revoked_permissions' => 'can_delete',
+            'allowed_permissions' => ['can_view', 'can_edit', 'can_delete'],
+            'revoked_permissions' => ['can_delete'],
         ]);
 
         $hasDelete = EntityPermission::subject($user)->hasAny(['can_delete']);
