@@ -2,6 +2,10 @@
 
 A modern, attribute-based authorization package for Laravel 9+ that works with any Eloquent model using PHP 8 attributes. **Built for scale** - optimized for applications with millions of entities.
 
+[![Latest Version](https://img.shields.io/packagist/v/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
+[![Total Downloads](https://img.shields.io/packagist/dt/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
+[![License](https://img.shields.io/packagist/l/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
+
 ## Features
 
 - **Attribute-based authorization** - Use PHP 8 attributes for clean, declarative permission checks
