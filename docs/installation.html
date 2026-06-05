@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installation - Akindutire Authorization</title>
+    <meta name="description" content="Complete installation guide for Laravel Model-Agnostic Authorization package">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -16,9 +17,10 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="installation.html" class="active">Installation</a></li>
                 <li><a href="quickstart.html">Quick Start</a></li>
-                <li><a href="api.html">API Reference</a></li>
+                <li><a href="api.html">API</a></li>
                 <li><a href="configuration.html">Configuration</a></li>
                 <li><a href="best-practices.html">Best Practices</a></li>
+                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -26,84 +28,222 @@
     <div class="doc-page">
         <div class="doc-container">
             <div class="doc-content">
-                <h1>Installation</h1>
-                <p>Get started with Akindutire Authorization in your Laravel application.</p>
+                <h1>Installation Guide</h1>
+                <p>Get started with model-agnostic authorization in your Laravel application. This package works with <strong>any</strong> Eloquent model, not just users.</p>
+
+                <div class="alert alert-info">
+                    <strong>Model-Agnostic:</strong> Unlike traditional packages, you can attach abilities to Articles, TeamMembers, Organizations, or any entity in your application.
+                </div>
 
                 <h2>Requirements</h2>
                 <ul>
-                    <li>PHP 8.1 or higher</li>
-                    <li>Laravel 9.0 or higher</li>
-                    <li>Composer</li>
+                    <li><strong>PHP:</strong> 8.1 or higher</li>
+                    <li><strong>Laravel:</strong> 9.0 or higher (supports Laravel 9, 10, 11+)</li>
+                    <li><strong>Cache:</strong> Redis or Memcached (recommended for production)</li>
                 </ul>
 
-                <h2>Install via Composer</h2>
+                <h2>Step 1: Install via Composer</h2>
                 <p>Install the package using Composer:</p>
-                <pre><code>composer require akindutire/authorization</code></pre>
+                <pre><code>composer require akindutire/authorization-pkg</code></pre>
 
-                <h2>Publish Configuration</h2>
-                <p>Publish the configuration file to customize the package settings:</p>
-                <pre><code>php artisan vendor:publish --tag=akindutire-authorization-config</code></pre>
+                <p>The package will automatically register via Laravel's package discovery.</p>
 
-                <p>This will create a configuration file at <code>config/akindutire-authorization.php</code>.</p>
+                <h2>Step 2: Publish Configuration</h2>
+                <p>Publish the configuration file to customize package settings:</p>
+                <pre><code>php artisan vendor:publish --tag=authorization-config</code></pre>
 
-                <h2>Database Setup</h2>
-
-                <h3>Generate Migration</h3>
-                <p>Create a migration to add permission columns to your model's table:</p>
-                <pre><code>php artisan make:permission-migration users</code></pre>
-
-                <p>This generates a migration file that adds two columns:</p>
+                <p>This creates <code>config/akindutire-authorization.php</code> where you can configure:</p>
                 <ul>
-                    <li><code>allowed_permissions</code> - JSON array of granted permissions</li>
-                    <li><code>revoked_permissions</code> - JSON array of explicitly denied permissions</li>
+                    <li>Ability templates for different roles</li>
+                    <li>Custom column names</li>
+                    <li>Cache TTL settings</li>
+                    <li>Entity tables to index</li>
+                    <li>Properties for fast lookups</li>
                 </ul>
+
+                <h2>Step 3: Database Setup</h2>
+
+                <h3>Generate Migrations for Each Entity</h3>
+                <p>Create migrations for <strong>each table</strong> that will have abilities:</p>
+
+                <pre><code># For articles
+php artisan make:permission-migration articles
+
+# For team members
+php artisan make:permission-migration team_members
+
+# For organizations
+php artisan make:permission-migration organizations
+
+# For users (if needed)
+php artisan make:permission-migration users</code></pre>
+
+                <p>Each migration adds two JSON columns with database-specific optimizations:</p>
+                <ul>
+                    <li><code>allowed_permissions</code> - Abilities the entity has</li>
+                    <li><code>revoked_permissions</code> - Explicitly denied abilities</li>
+                </ul>
+
+                <div class="alert alert-warning">
+                    <strong>Important:</strong> Generate a separate migration for each entity table. The command creates a timestamped migration customized for the specified table.
+                </div>
 
                 <h3>Run Migrations</h3>
-                <p>Apply the migration to your database:</p>
+                <p>Apply all migrations to your database:</p>
                 <pre><code>php artisan migrate</code></pre>
 
-                <h3>Custom Column Names</h3>
-                <p>If you need different column names, you can customize them in the migration or configure them in <code>config/akindutire-authorization.php</code>:</p>
-                <pre><code>'column_names' => [
-    'allowed_permissions' => 'permissions',
-    'revoked_permissions' => 'denied_permissions',
-],</code></pre>
+                <h2>Step 4: Configure Your Models</h2>
+                <p>Add the <code>HasPermissions</code> trait to <strong>any model</strong> that needs abilities:</p>
 
-                <h2>Add Trait to Model</h2>
-                <p>Add the <code>HasPermissions</code> trait to any Eloquent model that needs authorization:</p>
+                <h3>Articles</h3>
                 <pre><code>use Akindutire\Authorization\Traits\HasPermissions;
+use Illuminate\Database\Eloquent\Model;
 
-class User extends Authenticatable
+class Article extends Model
 {
     use HasPermissions;
 
-    // Your model code...
+    protected $casts = [
+        'allowed_permissions' => 'array',
+        'revoked_permissions' => 'array',
+    ];
 }</code></pre>
 
-                <h2>Warm Reflection Cache (Optional)</h2>
-                <p>For production environments, pre-warm the reflection cache during deployment:</p>
-                <pre><code>php artisan permission:cache</code></pre>
+                <h3>Team Members</h3>
+                <pre><code>class TeamMember extends Model
+{
+    use HasPermissions;
 
-                <p>This eliminates cache misses on first requests and improves initial response times.</p>
+    protected $casts = [
+        'allowed_permissions' => 'array',
+        'revoked_permissions' => 'array',
+    ];
+}</code></pre>
+
+                <h3>Organizations</h3>
+                <pre><code>class Organization extends Model
+{
+    use HasPermissions;
+
+    protected $casts = [
+        'allowed_permissions' => 'array',
+        'revoked_permissions' => 'array',
+    ];
+}</code></pre>
 
                 <div class="alert alert-info">
-                    <strong>Auto-Invalidation:</strong> When auto-invalidation is enabled in config, caches automatically update when attributes change. No manual cache clearing needed during development.
+                    <strong>Optional Casts:</strong> The trait automatically adds these casts if not explicitly defined. Adding them explicitly provides better IDE support.
                 </div>
 
+                <h2>Step 5: Register Middleware</h2>
+                <p>Add the middleware to <code>app/Http/Kernel.php</code>:</p>
+
+                <pre><code>protected $middlewareAliases = [
+    // ... other middleware
+    'validate.subject.action' => \Akindutire\Authorization\Middleware\ValidateSubjectAction::class,
+];</code></pre>
+
+                <p>Apply to route groups:</p>
+                <pre><code>Route::middleware(['validate.subject.action'])->group(function () {
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::post('/teams/{member_id}/invite', [TeamController::class, 'invite']);
+});</code></pre>
+
+                <h2>Step 6: Configure Production Caching (Optional)</h2>
+                <p>For production environments, configure Redis and warm the cache:</p>
+
+                <pre><code># .env
+CACHE_DRIVER=redis
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+PERMISSION_CACHE_TTL=300</code></pre>
+
+                <p>Warm cache during deployment:</p>
+                <pre><code>php artisan permission:cache</code></pre>
+
+                <h2>Step 7: Update Configuration</h2>
+                <p>Edit <code>config/akindutire-authorization.php</code> to list all entity tables:</p>
+
+                <pre><code>return [
+    'abilities' => [
+        'article_editor' => ['can_be_edited', 'can_be_deleted'],
+        'team_admin' => ['can_invite', 'can_manage_billing'],
+        'org_premium' => ['can_use_api', 'can_export_data'],
+    ],
+
+    'indexed_tables' => [
+        'articles',
+        'team_members',
+        'organizations',
+        'users',
+    ],
+
+    'indexed_properties' => [
+        'uuid',
+        'slug',
+        'tenant_id',
+    ],
+
+    'cache_keys' => [
+        'uuid',
+        'slug',
+        'tenant_id',
+    ],
+];</code></pre>
+
                 <h2>Verify Installation</h2>
-                <p>Test that everything is working by checking permissions in tinker:</p>
+                <p>Test that everything works by checking abilities in tinker:</p>
+
                 <pre><code>php artisan tinker
 
-$user = User::first();
-$user->grantPermission(['can_view', 'can_edit']);
-$user->hasPermission('can_view'); // true</code></pre>
+// Test with Article
+>>> $article = Article::first();
+>>> $article->grantPermission(['can_be_edited', 'can_be_published']);
+>>> $article->hasPermission('can_be_edited');
+=> true
+
+// Test with TeamMember
+>>> $member = TeamMember::first();
+>>> $member->grantPermission('can_invite');
+>>> $member->hasPermission('can_invite');
+=> true
+
+// Test with Organization
+>>> $org = Organization::first();
+>>> $org->grantPermission(['can_use_api']);
+>>> $org->hasPermission('can_use_api');
+=> true
+
+// Verify caching
+>>> Cache::has('entity.App.Models.Article.id.' . $article->id);
+=> true  // Cache is working</code></pre>
+
+                <h2>Common Installation Issues</h2>
+
+                <h3>Migration Already Exists</h3>
+                <p>If you get "migration already exists", delete the old migration and regenerate:</p>
+                <pre><code>rm database/migrations/*_add_permissions_to_articles_table.php
+php artisan make:permission-migration articles</code></pre>
+
+                <h3>Trait Not Found</h3>
+                <p>Ensure autoload is updated:</p>
+                <pre><code>composer dump-autoload</code></pre>
+
+                <h3>Cache Not Working</h3>
+                <p>Verify Redis is running:</p>
+                <pre><code>redis-cli ping  # Should return PONG</code></pre>
 
                 <h2>Next Steps</h2>
                 <ul>
-                    <li><a href="quickstart.html">Follow the Quick Start guide</a> to implement your first authorization check</li>
-                    <li><a href="configuration.html">Review configuration options</a> to customize the package</li>
-                    <li><a href="api.html">Explore the API Reference</a> for detailed method documentation</li>
+                    <li><a href="quickstart.html"><strong>Quick Start Guide</strong></a> - Implement your first authorization check</li>
+                    <li><a href="configuration.html"><strong>Configuration</strong></a> - Customize ability templates and caching</li>
+                    <li><a href="api.html"><strong>API Reference</strong></a> - Explore all available methods</li>
+                    <li><a href="best-practices.html"><strong>Best Practices</strong></a> - Production-ready patterns</li>
                 </ul>
+
+                <div class="alert alert-success">
+                    <strong>Installation Complete!</strong> You can now attach abilities to any Eloquent model and protect controller methods with PHP 8 attributes.
+                </div>
             </div>
         </div>
     </div>
@@ -117,25 +257,26 @@ $user->hasPermission('can_view'); // true</code></pre>
                         <li><a href="installation.html">Installation</a></li>
                         <li><a href="quickstart.html">Quick Start</a></li>
                         <li><a href="api.html">API Reference</a></li>
+                        <li><a href="configuration.html">Configuration</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul>
-                        <li><a href="configuration.html">Configuration</a></li>
                         <li><a href="best-practices.html">Best Practices</a></li>
+                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Links</h4>
-                    <ul>
-                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
-                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
-                    </ul>
+                    <h4>About</h4>
+                    <p>Created by Akindutire Ayomide</p>
+                    <p>MIT Licensed</p>
+                    <p>Version 2.0.0</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Akindutire Authorization. Built with Laravel.</p>
+                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
             </div>
         </div>
     </footer>
