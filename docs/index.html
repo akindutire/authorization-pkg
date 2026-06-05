@@ -137,8 +137,8 @@ $canEdit = EntityPermission::subject($user)->hasAny(['can_edit']);
 $isAdmin = EntityPermission::subject($user)
     ->hasAll(['can_edit', 'can_delete', 'can_publish']);
 
-// Get role-based defaults
-$permissions = EntityPermission::getDefaultActions('owner');</code></pre>
+// Get role-based abilities
+$permissions = EntityPermission::getAbilities('owner');</code></pre>
             </div>
         </div>
     </section>

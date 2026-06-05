@@ -43,7 +43,7 @@ return [
     |       ],
     |   ],
     |
-    | With role-based setup, use: EntityPermission::getDefaultActions('owner')
+    | With role-based setup, use: EntityPermission::getAbilities('owner')
     |
     */
     'abilities' => [

@@ -261,11 +261,11 @@ if (EntityPermission::subject($teamMember)->hasAll(['can_edit', 'can_view'])) {
     // Has all
 }
 
-// Get default actions for a role
-$permissions = EntityPermission::getDefaultActions('owner');
+// Get abilities for a role
+$permissions = EntityPermission::getAbilities('owner');
 ```
 
-### Configuring Default Actions per Role
+### Configuring Abilities per Role
 
 This feature is more informational and does not persist to database
 In `config/akindutire-authorization.php`:

@@ -167,14 +167,14 @@ if ($canDestroy) {
     // Subject can both update and delete
 }</code></pre>
 
-                <h3>getAbilities()</h3>
-                <p>Retrieves the ability templates from config.</p>
-                <pre><code>public function getAbilities(): array</code></pre>
+                <h3>getAbilities(string $role)</h3>
+                <p>Retrieves the abilities for a specific role from config.</p>
+                <pre><code>public function getAbilities(string $role): array</code></pre>
 
                 <p><strong>Examples:</strong></p>
-                <pre><code>// Get all abilities configuration
-$abilities = EntityPermission::getAbilities();
-// Returns: ['owner' => [...], 'admin' => [...], ...]</code></pre>
+                <pre><code>// Get abilities for a specific role
+$abilities = EntityPermission::getAbilities('owner');
+// Returns: ['can_update', 'can_delete', 'can_invite', ...]</code></pre>
 
                 <h2>Artisan Commands</h2>
 

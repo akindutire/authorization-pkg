@@ -64,12 +64,12 @@
 ],</code></pre>
 
                 <div class="alert alert-info">
-                    <strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities()</code>. You must still explicitly grant permissions using <code>grantPermission()</code>.
+                    <strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities('role')</code>. You must still explicitly grant permissions using <code>grantPermission()</code>.
                 </div>
 
                 <p><strong>Example:</strong></p>
                 <pre><code>// Get admin permissions from config
-$adminPerms = EntityPermission::getAbilities()['admin'];
+$adminPerms = EntityPermission::getAbilities('admin');
 // Then explicitly grant them
 $user->grantPermission($adminPerms);</code></pre>
 

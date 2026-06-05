@@ -471,8 +471,8 @@ if (EntityPermission::subject($article)->hasAll(['can_edit', 'can_publish'])) {
     // Has all permissions
 }
 
-// Get default abilities from config
-$permissions = EntityPermission::getAbilities();
+// Get abilities for a role from config
+$permissions = EntityPermission::getAbilities('owner');
 ```
 
 ### Manual Service Usage
@@ -811,12 +811,12 @@ Check if subject has all permissions.
 EntityPermission::subject($article)->hasAll(['can_edit', 'can_publish'])
 ```
 
-#### `getAbilities(): array`
+#### `getAbilities(string $role): array`
 
-Get default abilities from config.
+Get abilities for a specific role from config.
 
 ```php
-$abilities = EntityPermission::getAbilities();
+$abilities = EntityPermission::getAbilities('owner');
 ```
 
 ### Attributes

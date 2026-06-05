@@ -11,7 +11,7 @@ use Akindutire\Authorization\Services\PermissionSvc;
  * @method static \Akindutire\Authorization\Services\PermissionSvc subject(\Illuminate\Database\Eloquent\Model $subject, string $roleAllowedLookupIndex = 'allowed_permissions', string $subjectRevokedLookupIndex = 'revoked_permissions')
  * @method static bool hasAny(array $actions)
  * @method static bool hasAll(array $actions)
- * @method static array getDefaultActions(string $role)
+ * @method static array getAbilities(string $role)
  *
  * @see \Akindutire\Authorization\Services\PermissionSvc
  */

@@ -122,14 +122,14 @@ class PermissionSvc
     }
 
     /**
-     * Get default abilities for a application
+     * Get default abilities for a role
      *
      * Override this method or configure via config file to customize
      * default permissions
      *
      * @return array
      */
-    public function getDefaultActions(string $role): array
+    public function getAbilities(string $role): array
     {
         // Load from config if available
         $defaultActions = config("akindutire-authorization.abilities.{$role}", []);

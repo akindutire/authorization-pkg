@@ -36,7 +36,7 @@
     'admin' => ['can_update', 'can_create', 'can_view'],
     'member' => ['can_view'],
 ],</code></pre>
-                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities()</code>. They are not automatically applied.</p>
+                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities('role')</code>. They are not automatically applied.</p>
 
                 <h2>Step 2: Grant Permissions</h2>
                 <p>Use the <code>HasPermissions</code> trait methods to manage permissions:</p>
