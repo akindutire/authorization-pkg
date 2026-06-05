@@ -5,10 +5,11 @@ namespace Akindutire\Authorization\Tests\Feature;
 use Akindutire\Authorization\Facades\EntityPermission;
 use Akindutire\Authorization\Tests\Fixtures\TestUser;
 use Akindutire\Authorization\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class FacadeTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_can_check_permissions_via_facade()
     {
         $user = TestUser::create([
@@ -24,7 +25,7 @@ class FacadeTest extends TestCase
         $this->assertFalse($hasDelete);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_check_all_permissions_via_facade()
     {
         $user = TestUser::create([
@@ -40,16 +41,16 @@ class FacadeTest extends TestCase
         $this->assertFalse($hasMissing);
     }
 
-    /** @test */
-    public function it_can_get_default_actions_via_facade()
+    #[Test]
+    public function it_can_get_abilities_via_facade()
     {
-        $permissions = EntityPermission::getDefaultActions('owner');
+        $permissions = EntityPermission::getAbilities('owner');
 
         $this->assertIsArray($permissions);
         $this->assertNotEmpty($permissions);
     }
 
-    /** @test */
+    #[Test]
     public function facade_respects_revoked_permissions()
     {
         $user = TestUser::create([

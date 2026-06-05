@@ -11,6 +11,7 @@ use Akindutire\Authorization\Tests\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Route as RouteFacade;
+use PHPUnit\Framework\Attributes\Test;
 
 class MiddlewareTest extends TestCase
 {
@@ -22,7 +23,7 @@ class MiddlewareTest extends TestCase
         $this->middleware = new ValidateSubjectAction();
     }
 
-    /** @test */
+    #[Test]
     public function it_allows_request_when_user_has_required_permission()
     {
         $user = TestUser::create([
@@ -47,7 +48,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_denies_request_when_user_lacks_required_permission()
     {
         $user = TestUser::create([
@@ -73,7 +74,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_allows_request_when_user_has_all_required_permissions()
     {
         $user = TestUser::create([
@@ -98,7 +99,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_denies_request_when_user_missing_one_required_permission()
     {
         $user = TestUser::create([
@@ -123,7 +124,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_respects_revoked_permissions()
     {
         $user = TestUser::create([
@@ -149,7 +150,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_allows_unprotected_routes()
     {
         RouteFacade::get('/test', [TestController::class, 'unprotectedAction']);
@@ -168,7 +169,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_works_with_different_models()
     {
         $member = TestTeamMember::create([
@@ -193,7 +194,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_denies_when_subject_not_found()
     {
         RouteFacade::get('/test', [TestController::class, 'viewAction']);
@@ -212,7 +213,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_closure_routes_gracefully()
     {
         $request = Request::create('/test', 'GET');
@@ -228,7 +229,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_subject_value_is_null()
     {
         RouteFacade::get('/test', [TestController::class, 'viewAction']);
@@ -249,7 +250,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_value_from_route_parameters()
     {
         $user = TestUser::create([
@@ -275,7 +276,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_extracts_value_from_query_parameters()
     {
         $user = TestUser::create([
@@ -300,7 +301,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
-    /** @test */
+    #[Test]
     public function it_caches_reflection_metadata()
     {
         $user = TestUser::create([
@@ -338,7 +339,7 @@ class MiddlewareTest extends TestCase
         $this->assertArrayHasKey('subject_value_key', $cachedMetadata);
     }
 
-    /** @test */
+    #[Test]
     public function it_uses_auto_invalidation_hash_in_cache_key()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -349,7 +350,7 @@ class MiddlewareTest extends TestCase
         $this->assertMatchesRegularExpression('/\.[a-f0-9]{8}$/', $cacheKey);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_consistent_cache_keys_for_same_controller_method()
     {
         $key1 = $this->getCacheKeyForController(TestController::class, 'viewAction');
@@ -358,7 +359,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_different_cache_keys_for_different_methods()
     {
         $key1 = $this->getCacheKeyForController(TestController::class, 'viewAction');
@@ -367,7 +368,7 @@ class MiddlewareTest extends TestCase
         $this->assertNotEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_json_array_permissions_correctly()
     {
         // User with permissions stored as JSON array (auto-cast by trait)

@@ -5,6 +5,7 @@ namespace Akindutire\Authorization\Tests\Unit;
 use Akindutire\Authorization\Attributes\Interfaces\SubjectModel;
 use Akindutire\Authorization\Services\PermissionSvc;
 use Akindutire\Authorization\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class PermissionSvcTest extends TestCase
 {
@@ -16,7 +17,7 @@ class PermissionSvcTest extends TestCase
         $this->service = new PermissionSvc();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_set_subject()
     {
         $subject = new SubjectModel(['can_view', 'can_edit'], []);
@@ -26,7 +27,7 @@ class PermissionSvcTest extends TestCase
         $this->assertInstanceOf(PermissionSvc::class, $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_true_when_subject_has_any_permission()
     {
         $subject = new SubjectModel(['can_view', 'can_edit', 'can_delete'], []);
@@ -36,7 +37,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_subject_has_none_of_permissions()
     {
         $subject = new SubjectModel(['can_view'], []);
@@ -46,7 +47,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_true_when_subject_has_all_permissions()
     {
         $subject = new SubjectModel(['can_view', 'can_edit', 'can_delete'], []);
@@ -56,7 +57,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_subject_missing_one_permission()
     {
         $subject = new SubjectModel(['can_view', 'can_edit'], []);
@@ -66,7 +67,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_excludes_revoked_permissions_from_check()
     {
         $subject = new SubjectModel(['can_view', 'can_edit', 'can_delete'], ['can_delete']);
@@ -78,7 +79,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($hasView);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_when_checking_permissions_without_subject()
     {
         $this->expectException(\Exception::class);
@@ -87,7 +88,7 @@ class PermissionSvcTest extends TestCase
         $this->service->hasAny(['can_view']);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_for_empty_permission_array()
     {
         $subject = new SubjectModel(['can_view'], []);
@@ -97,7 +98,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_flattened_nested_permission_arrays()
     {
         $subject = new SubjectModel(['can_view', 'can_edit'], []);
@@ -110,8 +111,8 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
-    public function it_gets_default_actions_for_role()
+    #[Test]
+    public function it_gets_abilities_for_role()
     {
         config(['akindutire-authorization.abilities' => [
             'owner' => ['can_update', 'can_delete', 'can_invite'],
@@ -119,8 +120,8 @@ class PermissionSvcTest extends TestCase
             'member' => ['can_view'],
         ]]);
 
-        $ownerPermissions = $this->service->getDefaultActions('owner');
-        $adminPermissions = $this->service->getDefaultActions('admin');
+        $ownerPermissions = $this->service->getAbilities('owner');
+        $adminPermissions = $this->service->getAbilities('admin');
 
         $this->assertIsArray($ownerPermissions);
         $this->assertContains('can_update', $ownerPermissions);
@@ -132,20 +133,20 @@ class PermissionSvcTest extends TestCase
         $this->assertNotContains('can_delete', $adminPermissions);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_empty_array_for_unknown_role()
     {
         config(['akindutire-authorization.abilities' => [
             'owner' => ['can_update', 'can_delete'],
         ]]);
 
-        $permissions = $this->service->getDefaultActions('unknown_role');
+        $permissions = $this->service->getAbilities('unknown_role');
 
         $this->assertIsArray($permissions);
         $this->assertEmpty($permissions);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_simple_abilities_array()
     {
         config(['akindutire-authorization.abilities' => [
@@ -155,12 +156,12 @@ class PermissionSvcTest extends TestCase
         ]]);
 
         // When abilities is a simple array, role lookup returns empty
-        $permissions = $this->service->getDefaultActions('owner');
+        $permissions = $this->service->getAbilities('owner');
 
         $this->assertIsArray($permissions);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_null_permissions_gracefully()
     {
         $subject = new SubjectModel(null, null);
@@ -170,7 +171,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_empty_string_permissions()
     {
         $subject = new SubjectModel('', '');
@@ -180,7 +181,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_json_string_permissions()
     {
         $subject = new SubjectModel(
@@ -195,7 +196,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($hasDelete); // Revoked
     }
 
-    /** @test */
+    #[Test]
     public function it_clears_memoization_when_subject_changes()
     {
         $subject1 = new SubjectModel(['can_view'], []);
@@ -210,7 +211,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($this->service->subject($subject2)->hasAny(['can_edit']));
     }
 
-    /** @test */
+    #[Test]
     public function it_memoizes_permission_resolution_for_same_subject()
     {
         $subject = new SubjectModel(['can_view', 'can_edit', 'can_delete'], ['can_delete']);
@@ -225,7 +226,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result2);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_whitespace_in_permissions()
     {
         $subject = new SubjectModel(['can_view', '  ', 'can_edit', ''], []);
@@ -235,7 +236,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_if_abilities_config_is_not_array()
     {
         config(['akindutire-authorization.abilities.owner' => 'not-an-array']);
@@ -243,6 +244,6 @@ class PermissionSvcTest extends TestCase
         $this->expectException(\Exception::class);
         $this->expectExceptionMessage("Default abilities must be an array");
 
-        $this->service->getDefaultActions('owner');
+        $this->service->getAbilities('owner');
     }
 }

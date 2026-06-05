@@ -5,10 +5,11 @@ namespace Akindutire\Authorization\Tests\Unit;
 use Akindutire\Authorization\Support\ReflectionCacheKeyGenerator;
 use Akindutire\Authorization\Tests\Fixtures\TestControllerWithAttributes;
 use Akindutire\Authorization\Tests\TestCase;
+use PHPUnit\Framework\Attributes\Test;
 
 class ReflectionCacheKeyGeneratorTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function it_generates_cache_key_without_auto_invalidation()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => false]);
@@ -23,7 +24,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('.', substr($key, strrpos($key, '.') + 1));
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_cache_key_with_auto_invalidation()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -46,7 +47,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]+$/', $hash);
     }
 
-    /** @test */
+    #[Test]
     public function it_normalizes_controller_backslashes_to_dots()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => false]);
@@ -60,7 +61,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertStringNotContainsString('\\', $key);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_same_hash_for_identical_attributes()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -78,7 +79,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_different_hash_for_different_hasany_actions()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -102,7 +103,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertNotEquals($base1, $base2); // Different methods
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_different_hash_for_hasany_vs_hasall()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -121,7 +122,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertNotEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_different_hash_when_subject_class_changes()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -140,7 +141,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertNotEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_none_hash_for_methods_without_attributes()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -154,7 +155,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertStringEndsWith('.none', $key);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_multiple_permission_attributes()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -168,7 +169,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertMatchesRegularExpression('/\.[a-f0-9]{8}$/', $key);
     }
 
-    /** @test */
+    #[Test]
     public function it_includes_subject_value_parameter_in_hash()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -187,7 +188,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertNotEquals($key1, $key2);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_consistent_hash_across_multiple_calls()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
@@ -204,7 +205,7 @@ class ReflectionCacheKeyGeneratorTest extends TestCase
         $this->assertCount(1, array_unique($keys));
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_methods_with_nested_attribute_arguments()
     {
         config(['akindutire-authorization.auto_invalidate_reflection_cache' => true]);
