@@ -27,8 +27,8 @@
 
     <header class="hero">
         <div class="container">
-            <h1 class="hero-title">Modern Authorization for Laravel</h1>
-            <p class="hero-subtitle">Elegant, attribute-based permissions with automatic cache invalidation</p>
+            <h1 class="hero-title">Model-Agnostic Authorization for Laravel</h1>
+            <p class="hero-subtitle">Attach abilities to ANY model - Articles, Organizations, TeamMembers - using PHP 8 attributes</p>
             <div class="hero-buttons">
                 <a href="installation.html" class="btn btn-primary">Get Started</a>
                 <a href="https://github.com/akindutire/authorization-pkg" class="btn btn-secondary" target="_blank">View on GitHub</a>
@@ -88,16 +88,18 @@
 
             <div class="tab-content active" id="controller">
                 <pre><code class="language-php">use Akindutire\Authorization\Attributes\{HasAny, SubjectValue};
-use App\Models\User;
+use App\Models\Article;
 
 class ArticleController extends Controller
 {
-    #[HasAny(['can_edit', 'can_publish'], User::class, 'id')]
+    // Check if ARTICLE has abilities (not user!)
+    #[HasAny(['can_be_edited'], Article::class, 'id')]
     public function update(
-        #[SubjectValue('user_id')] Request $request,
-        Article $article
+        #[SubjectValue] int $id,
+        Request $request
     ) {
-        // Only users with 'can_edit' OR 'can_publish' permission can access
+        // Only executes if the Article has 'can_be_edited' ability
+        $article = Article::find($id);
         $article->update($request->validated());
 
         return response()->json($article);
@@ -108,37 +110,34 @@ class ArticleController extends Controller
             <div class="tab-content" id="model">
                 <pre><code class="language-php">use Akindutire\Authorization\Traits\HasPermissions;
 
-class User extends Authenticatable
-{
-    use HasPermissions;
+// Works with ANY model!
+class Article extends Model { use HasPermissions; }
+class TeamMember extends Model { use HasPermissions; }
+class Organization extends Model { use HasPermissions; }
 
-    // $casts automatically added by trait!
-}
+// Grant abilities to an Article
+$article->grantPermission(['can_be_edited', 'can_be_published']);
 
-// Grant permissions
-$user->grantPermission(['can_edit', 'can_publish']);
+// TeamMember has role abilities
+$member->grantPermission(['can_invite', 'can_manage_team']);
 
-// Revoke permissions
-$user->revokePermission('can_publish');
-
-// Check permissions
-if ($user->hasPermission('can_edit')) {
-    // User can edit
+// Check abilities
+if ($article->hasPermission('can_be_edited')) {
+    // Article can be edited
 }</code></pre>
             </div>
 
             <div class="tab-content" id="facade">
                 <pre><code class="language-php">use Akindutire\Authorization\Facades\EntityPermission;
 
-// Check via facade
-$canEdit = EntityPermission::subject($user)->hasAny(['can_edit']);
+// Check if Article has abilities
+$canEdit = EntityPermission::subject($article)->hasAny(['can_be_edited']);
 
-// Check all permissions
-$isAdmin = EntityPermission::subject($user)
-    ->hasAll(['can_edit', 'can_delete', 'can_publish']);
+// Check TeamMember abilities
+$canInvite = EntityPermission::subject($member)->hasAll(['can_invite']);
 
-// Get role-based abilities
-$permissions = EntityPermission::getAbilities('owner');</code></pre>
+// Get role-based ability templates
+$abilities = EntityPermission::getAbilities('admin');</code></pre>
             </div>
         </div>
     </section>

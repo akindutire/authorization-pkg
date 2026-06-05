@@ -29,16 +29,18 @@
                 <h1>Quick Start Guide</h1>
                 <p>Learn how to implement authorization in your Laravel application in 5 minutes.</p>
 
-                <h2>Step 1: Define Abilities (Optional)</h2>
+                <h2>Step 1: Define Model abilities/properties grouped by tags(Optional)</h2>
+                <p>A user, post, campaigns, ..etc </p>
                 <p>Optionally configure ability templates in <code>config/akindutire-authorization.php</code> for reference:</p>
                 <pre><code>'abilities' => [
     'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
     'admin' => ['can_update', 'can_create', 'can_view'],
     'member' => ['can_view'],
+    'virality' => ['can_go_viral', 'can_boost']
 ],</code></pre>
-                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities('role')</code>. They are not automatically applied.</p>
+                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities('tag')</code>. They are not automatically applied.</p>
 
-                <h2>Step 2: Grant Permissions</h2>
+                <h2>Step 2: Grant Permissions/traits/properties</h2>
                 <p>Use the <code>HasPermissions</code> trait methods to manage permissions:</p>
                 <pre><code>// Grant permissions to a user
 $user->grantPermission(['can_view', 'can_edit']);
@@ -49,7 +51,9 @@ $user->grantPermission('can_delete');
 // Revoke permissions (overrides allowed permissions)
 $user->revokePermission(['can_delete']);</code></pre>
 
-                <h2>Step 3: Protect Routes with Middleware</h2>
+                <h2>Step 3: To effectively attach identifier of model (for instace post) to validate, you can attach post id via a middleware or route parameter. 
+                    Protect Routes with ValidateSubjectAction Middleware</h2>
+                <p>Add the <code>current.subject.action</code> middleware to your routes:</p>
                 <p>Add the <code>validate.subject.action</code> middleware to your routes:</p>
                 <pre><code>use Akindutire\Authorization\Middleware\ValidateSubjectAction;
 
@@ -65,8 +69,8 @@ Route::middleware([ValidateSubjectAction::class])->group(function () {
 
 class PostController extends Controller
 {
-    #[HasAny(['can_view'], Post::class, 'user_id')]
-    public function show(#[SubjectValue('id')] int $id)
+    #[HasAny(['can_view'], User::class, 'id')]
+    public function show(#[SubjectValue('user_id')] Request $request, int $id)
     {
         $post = Post::findOrFail($id);
         return view('posts.show', compact('post'));

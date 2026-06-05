@@ -122,17 +122,17 @@ class PermissionSvc
     }
 
     /**
-     * Get default abilities for a role
+     * Get default abilities for a tag (e.g., role-based templates)
      *
      * Override this method or configure via config file to customize
      * default permissions
      *
      * @return array
      */
-    public function getAbilities(string $role): array
+    public function getAbilities(string $tag): array
     {
         // Load from config if available
-        $defaultActions = config("akindutire-authorization.abilities.{$role}", []);
+        $defaultActions = config("akindutire-authorization.abilities.{$tag}", []);
 
         if (!is_array($defaultActions)) {
             throw new \Exception("Default abilities must be an array, check your configuration");

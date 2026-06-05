@@ -152,9 +152,13 @@ The `config/akindutire-authorization.php` file controls all package behavior:
 
 ```php
 return [
-    // Default permissions for your application
+    // Ability templates for different entity roles/types
     'abilities' => [
-        // 'can_edit', 'can_delete', 'can_broadcast', etc.
+        'article_editor' => ['can_be_edited', 'can_be_deleted'],
+        'article_publisher' => ['can_be_edited', 'can_be_published', 'can_be_featured'],
+        'team_admin' => ['can_invite', 'can_remove_members', 'can_manage_billing'],
+        'team_member' => ['can_invite', 'can_view_analytics'],
+        'org_premium' => ['can_use_api', 'can_export_data', 'can_white_label'],
     ],
 
     // Column names (customize if needed)
@@ -175,9 +179,13 @@ return [
     ],
 
     // Tables to receive performance indexes
+    // List all tables where entities have the HasPermissions trait
     'indexed_tables' => [
+        'articles',
+        'team_members',
+        'organizations',
         'users',
-        // Add: 'articles', 'team_members', 'posts', etc.
+        // Add any other entity tables
     ],
 
     // Properties to index for fast lookups
@@ -228,38 +236,56 @@ For production, configure Redis in `config/cache.php`:
 
 ## Basic Usage
 
-### Defining Permissions
+### Defining Abilities
 
-Create an enum for your application's permissions:
+Create enums for your entities' abilities. Remember: abilities describe what the entity itself can do, not what users can do to it.
 
 ```php
 <?php
 
 namespace App\Enums;
 
-enum AppActions: string
+// Article abilities - what articles can do
+enum ArticleAbilities: string
 {
-    case CAN_EDIT = 'can_edit';
-    case CAN_DELETE = 'can_delete';
-    case CAN_BROADCAST = 'can_broadcast';
-    case CAN_PUBLISH = 'can_publish';
-    case CAN_SEND_ANALYTICS = 'can_send_analytics';
+    case CAN_BE_EDITED = 'can_be_edited';
+    case CAN_BE_DELETED = 'can_be_deleted';
+    case CAN_BE_PUBLISHED = 'can_be_published';
+    case CAN_BE_FEATURED = 'can_be_featured';
+    case CAN_BE_BROADCASTED = 'can_be_broadcasted';
+}
 
-    // Add your permissions here
+// Team member abilities - what team members can do
+enum TeamMemberAbilities: string
+{
+    case CAN_INVITE = 'can_invite';
+    case CAN_REMOVE_MEMBERS = 'can_remove_members';
+    case CAN_MANAGE_BILLING = 'can_manage_billing';
+    case CAN_VIEW_ANALYTICS = 'can_view_analytics';
+}
+
+// Organization abilities - what organizations can do
+enum OrganizationAbilities: string
+{
+    case CAN_USE_API = 'can_use_api';
+    case CAN_EXPORT_DATA = 'can_export_data';
+    case CAN_WHITE_LABEL = 'can_white_label';
 }
 ```
 
 ### Protecting Controller Methods
 
-Use PHP 8 attributes to protect methods:
+Use PHP 8 attributes to protect methods. The key insight: you're checking if the **entity itself** has the ability, not checking if a user can act on it.
 
 ```php
 <?php
 
 namespace App\Http\Controllers;
 
-use App\Enums\AppActions;
+use App\Enums\ArticleAbilities;
+use App\Enums\TeamMemberAbilities;
 use App\Models\Article;
+use App\Models\TeamMember;
 use Akindutire\Authorization\Attributes\HasAny;
 use Akindutire\Authorization\Attributes\HasAll;
 use Akindutire\Authorization\Attributes\SubjectValue;
@@ -268,26 +294,55 @@ use Illuminate\Http\Request;
 class ArticleController extends Controller
 {
     /**
-     * Check if article has ANY of the specified permissions
+     * Check if the ARTICLE entity has the ability to be edited
+     * This is NOT checking if a user can edit - it's checking if the article itself can be edited
      */
-    #[HasAny([AppActions::CAN_BROADCAST->value], Article::class, 'id')]
-    public function broadcast(#[SubjectValue('article_id')] Request $request)
-    {
-        $article = Article::find($request->article_id);
-        // Broadcast the article...
+    #[HasAny([ArticleAbilities::CAN_BE_EDITED->value], Article::class, 'id')]
+    public function update(
+        #[SubjectValue] int $id,
+        Request $request
+    ) {
+        // Only executes if the Article has 'can_be_edited' ability
+        $article = Article::find($id);
+        $article->update($request->validated());
+
+        return response()->json($article);
     }
 
     /**
-     * Check if article has ALL of the specified permissions
+     * Check if the ARTICLE has BOTH abilities
+     * The article controls whether it can be published and featured
      */
     #[HasAll([
-        AppActions::CAN_EDIT->value,
-        AppActions::CAN_PUBLISH->value
+        ArticleAbilities::CAN_BE_PUBLISHED->value,
+        ArticleAbilities::CAN_BE_FEATURED->value
     ], Article::class, 'id')]
-    public function publish(#[SubjectValue('article_id')] Request $request)
+    public function publishAndFeature(#[SubjectValue] int $id)
     {
-        $article = Article::find($request->article_id);
-        // Publish the article...
+        $article = Article::find($id);
+        $article->update([
+            'published_at' => now(),
+            'featured' => true,
+        ]);
+
+        return response()->json($article);
+    }
+}
+
+class TeamController extends Controller
+{
+    /**
+     * Check if the TEAM MEMBER has the ability to invite others
+     * The team member entity controls who can invite, not a separate user permission
+     */
+    #[HasAny([TeamMemberAbilities::CAN_INVITE->value], TeamMember::class, 'id')]
+    public function inviteMember(
+        #[SubjectValue('member_id')] Request $request
+    ) {
+        $member = TeamMember::find($request->member_id);
+        // Send invitation...
+
+        return response()->json(['message' => 'Invitation sent']);
     }
 }
 ```
@@ -306,17 +361,18 @@ class ArticleController extends Controller
 
 **Parameters:**
 
-1. **`$actions`**: Array of permission strings
-   - Example: `['can_edit', 'can_delete']`
-   - Use enum values: `[AppActions::CAN_EDIT->value]`
+1. **`$actions`**: Array of ability strings
+   - Example: `['can_be_edited', 'can_be_published']` for articles
+   - Example: `['can_invite', 'can_manage_billing']` for team members
+   - Use enum values: `[ArticleAbilities::CAN_BE_EDITED->value]`
 
-2. **`$subjectDefinition`**: Fully-qualified class name
-   - Example: `Article::class`, `TeamMember::class`
-   - Must be an Eloquent model
+2. **`$subjectDefinition`**: Fully-qualified class name of the entity being checked
+   - Example: `Article::class`, `TeamMember::class`, `Organization::class`
+   - Must be an Eloquent model with HasPermissions trait
 
-3. **`$subjectDefinitionProperty`**: Property to use for lookup (default: `'id'`)
-   - Example: `'uuid'`, `'email'`, `'slug'`
-   - Must match a database column
+3. **`$subjectDefinitionProperty`**: Property to use for entity lookup (default: `'id'`)
+   - Example: `'uuid'`, `'slug'`, `'member_id'`
+   - Must match a database column on the subject model
 
 #### `#[SubjectValue(...)]`
 
@@ -341,59 +397,74 @@ class ArticleController extends Controller
 **Example:**
 
 ```php
-// Route: POST /articles/broadcast
+// Route: POST /articles/publish
 // Body: {"article_id": 123}
 
-#[HasAny(['can_broadcast'], Article::class, 'id')]
-public function broadcast(#[SubjectValue('article_id')] Request $request)
+#[HasAny(['can_be_published'], Article::class, 'id')]
+public function publish(#[SubjectValue('article_id')] Request $request)
 {
     // Middleware extracts: $request->input('article_id') → 123
     // Looks up: Article::where('id', 123)->first()
-    // Checks: Does this article have 'can_broadcast' permission?
+    // Checks: Does this Article entity have 'can_be_published' ability?
+    // Note: We're checking the ARTICLE's ability, not a user's permission
 }
 ```
 
-### Granting and Revoking Permissions
+### Granting and Revoking Abilities
+
+Grant abilities to any entity - remember, abilities belong to the entity itself:
+
+```php
+// Articles have publication abilities
+$article = Article::find(1);
+$article->grantPermission('can_be_edited');
+$article->grantPermission(['can_be_edited', 'can_be_published', 'can_be_featured']);
+
+// Team members have role-based abilities
+$member = TeamMember::find(1);
+$member->grantPermission('can_invite');
+$member->grantPermission(['can_invite', 'can_manage_billing', 'can_view_analytics']);
+
+// Organizations have feature abilities
+$org = Organization::find(1);
+$org->grantPermission(['can_use_api', 'can_export_data', 'can_white_label']);
+
+// Revoke abilities (atomic - adds to revoked list)
+$article->revokePermission('can_be_deleted'); // Lock the article from deletion
+$member->revokePermission(['can_manage_billing']); // Remove billing access
+```
+
+### Checking Abilities Manually
+
+Check if an entity has specific abilities:
 
 ```php
 $article = Article::find(1);
 
-// Grant a single permission (atomic)
-$article->grantPermission('can_broadcast');
-
-// Grant multiple permissions at once (batch)
-$article->grantPermission(['can_broadcast', 'can_publish']);
-
-// Revoke a single permission (atomic - adds to revoked list)
-$article->revokePermission('can_broadcast');
-
-// Revoke multiple permissions (batch)
-$article->revokePermission(['can_broadcast', 'can_publish']);
-```
-
-### Checking Permissions Manually
-
-```php
-$article = Article::find(1);
-
-// Check single permission
-if ($article->hasPermission('can_broadcast')) {
-    // Article can be broadcasted
+// Check single ability - does this ARTICLE have the ability to be edited?
+if ($article->hasPermission('can_be_edited')) {
+    // The article can be edited
 }
 
-// Check if has ANY of the permissions
-if ($article->hasAnyPermission(['can_broadcast', 'can_publish'])) {
-    // Has at least one
+// Check if entity has ANY of the abilities
+if ($article->hasAnyPermission(['can_be_edited', 'can_be_published'])) {
+    // Article has at least one ability
 }
 
-// Check if has ALL permissions
-if ($article->hasAllPermissions(['can_broadcast', 'can_publish'])) {
-    // Has both
+// Check if entity has ALL abilities
+if ($article->hasAllPermissions(['can_be_published', 'can_be_featured'])) {
+    // Article can be both published and featured
 }
 
-// Get effective permissions (allowed - revoked)
-$permissions = $article->getEffectivePermissions();
-// Returns: ['can_broadcast', 'can_publish']
+// Get effective abilities (allowed - revoked)
+$abilities = $article->getEffectivePermissions();
+// Returns: ['can_be_edited', 'can_be_published']
+
+// Check team member abilities
+$member = TeamMember::find(1);
+if ($member->hasPermission('can_invite')) {
+    // This team member can invite others
+}
 ```
 
 ---
@@ -402,35 +473,44 @@ $permissions = $article->getEffectivePermissions();
 
 ### Lookup by Custom Properties
 
-You can lookup entities by any property (not just `id`):
+You can lookup entities by any property (not just `id`). This is useful for different models with different identifiers:
 
-#### By UUID
-
-```php
-#[HasAny(['can_edit'], User::class, 'uuid')]
-public function update(#[SubjectValue('user_uuid')] Request $request)
-{
-    // Looks up: User::where('uuid', $request->user_uuid)->first()
-}
-```
-
-#### By Email
+#### Articles by Slug
 
 ```php
-#[HasAny(['can_edit'], User::class, 'email')]
-public function update(#[SubjectValue('user_email')] Request $request)
-{
-    // Looks up: User::where('email', $request->user_email)->first()
-}
-```
-
-#### By Slug
-
-```php
-#[HasAny(['can_publish'], Article::class, 'slug')]
-public function publish(#[SubjectValue('article_slug')] Request $request)
+#[HasAny(['can_be_published'], Article::class, 'slug')]
+public function publishBySlug(#[SubjectValue('article_slug')] Request $request)
 {
     // Looks up: Article::where('slug', $request->article_slug)->first()
+    // Checks: Does this Article have 'can_be_published' ability?
+    $article = Article::where('slug', $request->article_slug)->firstOrFail();
+    $article->update(['published_at' => now()]);
+}
+```
+
+#### Team Members by UUID
+
+```php
+#[HasAny(['can_invite'], TeamMember::class, 'uuid')]
+public function inviteByUuid(#[SubjectValue('member_uuid')] Request $request)
+{
+    // Looks up: TeamMember::where('uuid', $request->member_uuid)->first()
+    // Checks: Does this TeamMember have 'can_invite' ability?
+    $member = TeamMember::where('uuid', $request->member_uuid)->firstOrFail();
+    // Send invitation...
+}
+```
+
+#### Organizations by Tenant ID
+
+```php
+#[HasAny(['can_use_api'], Organization::class, 'tenant_id')]
+public function apiAccess(#[SubjectValue('org_tenant_id')] Request $request)
+{
+    // Looks up: Organization::where('tenant_id', $request->org_tenant_id)->first()
+    // Checks: Does this Organization have 'can_use_api' ability?
+    $org = Organization::where('tenant_id', $request->org_tenant_id)->firstOrFail();
+    return response()->json(['api_key' => $org->api_key]);
 }
 ```
 
@@ -445,34 +525,55 @@ Extract values from route parameters:
 Route::put('/articles/{article_id}/publish', [ArticleController::class, 'publish']);
 
 // Controller
-#[HasAny(['can_publish'], Article::class, 'id')]
+#[HasAny(['can_be_published'], Article::class, 'id')]
 public function publish(#[SubjectValue('article_id')] Request $request)
 {
     // Middleware automatically extracts {article_id} from route
+    // Checks: Does Article with id={article_id} have 'can_be_published' ability?
+}
+
+// Works with any model
+Route::post('/teams/{member_id}/invite', [TeamController::class, 'invite']);
+
+#[HasAny(['can_invite'], TeamMember::class, 'id')]
+public function invite(#[SubjectValue('member_id')] Request $request)
+{
+    // Checks: Does TeamMember with id={member_id} have 'can_invite' ability?
 }
 ```
 
 ### Using the Facade
 
-For programmatic permission checks:
+For programmatic ability checks on any entity:
 
 ```php
 use Akindutire\Authorization\Facades\EntityPermission;
 
+// Check Article abilities
 $article = Article::find(1);
-
-// Check if entity has any permission
-if (EntityPermission::subject($article)->hasAny(['can_broadcast'])) {
-    // Has permission
+if (EntityPermission::subject($article)->hasAny(['can_be_published'])) {
+    // This article can be published
 }
 
-// Check if entity has all permissions
-if (EntityPermission::subject($article)->hasAll(['can_edit', 'can_publish'])) {
-    // Has all permissions
+if (EntityPermission::subject($article)->hasAll(['can_be_edited', 'can_be_featured'])) {
+    // This article has both abilities
 }
 
-// Get abilities for a role from config
-$permissions = EntityPermission::getAbilities('owner');
+// Check TeamMember abilities
+$member = TeamMember::find(1);
+if (EntityPermission::subject($member)->hasAny(['can_invite', 'can_manage_billing'])) {
+    // This member has at least one of these abilities
+}
+
+// Check Organization abilities
+$org = Organization::find(1);
+if (EntityPermission::subject($org)->hasAll(['can_use_api', 'can_export_data'])) {
+    // This organization has both abilities
+}
+
+// Get ability templates for a role from config
+$adminAbilities = EntityPermission::getAbilities('admin');
+$article->grantPermission($adminAbilities);
 ```
 
 ### Manual Service Usage
@@ -594,15 +695,20 @@ Examples:
 
 **Automatic Cache Invalidation:**
 
-Caches are automatically cleared when permissions change:
+Caches are automatically cleared when entity abilities change:
 
 ```php
-$article->grantPermission('can_broadcast');
-// Automatically clears:
+// When granting abilities to an Article
+$article->grantPermission('can_be_published');
+// Automatically clears all cache entries for this Article:
 // - entity.App.Models.Article.id.{article_id}
 // - entity.App.Models.Article.uuid.{article_uuid}
 // - entity.App.Models.Article.slug.{article_slug}
 // (for all properties in 'cache_keys' config)
+
+// When granting abilities to a TeamMember
+$member->grantPermission('can_invite');
+// Automatically clears all cache entries for this TeamMember
 ```
 
 ### Reflection Metadata Caching
@@ -702,83 +808,112 @@ Available methods on models using this trait:
 
 #### `grantPermission(string|array $permission): bool`
 
-Add a single permission (atomic operation) or multiple permissions (batch operation).
+Add abilities to an entity (atomic operation for single, batch for multiple).
 
 ```php
-// Grant a single permission
-$article->grantPermission('can_broadcast');
+// Grant a single ability to an Article
+$article->grantPermission('can_be_published');
 
-// Grant multiple permissions at once
-$article->grantPermission(['can_broadcast', 'can_publish']);
+// Grant multiple abilities at once
+$article->grantPermission(['can_be_edited', 'can_be_published', 'can_be_featured']);
+
+// Grant abilities to a TeamMember
+$member->grantPermission(['can_invite', 'can_manage_billing']);
 ```
 
 #### `revokePermission(string|array $permission): bool`
 
-Revoke a single permission (atomic operation) or multiple permissions (batch operation).
+Revoke abilities from an entity (atomic operation for single, batch for multiple).
 
 ```php
-// Revoke a single permission
-$article->revokePermission('can_broadcast');
+// Revoke a single ability from an Article
+$article->revokePermission('can_be_deleted');
 
-// Revoke multiple permissions
-$article->revokePermission(['can_broadcast', 'can_publish']);
+// Revoke multiple abilities
+$article->revokePermission(['can_be_deleted', 'can_be_featured']);
+
+// Revoke abilities from a TeamMember
+$member->revokePermission(['can_manage_billing']);
 ```
 
 #### `hasPermission(string $permission): bool`
 
-Check if entity has a specific permission.
+Check if entity has a specific ability.
 
 ```php
-if ($article->hasPermission('can_broadcast')) {
-    // Has permission
+// Check if Article has an ability
+if ($article->hasPermission('can_be_published')) {
+    // Article has this ability
+}
+
+// Check if TeamMember has an ability
+if ($member->hasPermission('can_invite')) {
+    // Member has this ability
 }
 ```
 
 #### `hasAnyPermission(array $permissions): bool`
 
-Check if entity has at least one permission.
+Check if entity has at least one ability.
 
 ```php
-if ($article->hasAnyPermission(['can_broadcast', 'can_publish'])) {
-    // Has at least one
+if ($article->hasAnyPermission(['can_be_edited', 'can_be_published'])) {
+    // Article has at least one ability
+}
+
+if ($member->hasAnyPermission(['can_invite', 'can_manage_billing'])) {
+    // Member has at least one ability
 }
 ```
 
 #### `hasAllPermissions(array $permissions): bool`
 
-Check if entity has all permissions.
+Check if entity has all abilities.
 
 ```php
-if ($article->hasAllPermissions(['can_broadcast', 'can_publish'])) {
-    // Has both
+if ($article->hasAllPermissions(['can_be_published', 'can_be_featured'])) {
+    // Article has both abilities
+}
+
+if ($member->hasAllPermissions(['can_invite', 'can_view_analytics'])) {
+    // Member has both abilities
 }
 ```
 
 #### `getAllowedPermissions(): array`
 
-Get all allowed permissions.
+Get all allowed abilities for an entity.
 
 ```php
-$permissions = $article->getAllowedPermissions();
-// Returns: ['can_broadcast', 'can_publish', 'can_edit']
+$abilities = $article->getAllowedPermissions();
+// Returns: ['can_be_edited', 'can_be_published', 'can_be_featured']
+
+$memberAbilities = $member->getAllowedPermissions();
+// Returns: ['can_invite', 'can_manage_billing']
 ```
 
 #### `getRevokedPermissions(): array`
 
-Get all revoked permissions.
+Get all revoked abilities for an entity.
 
 ```php
 $revoked = $article->getRevokedPermissions();
-// Returns: ['can_delete']
+// Returns: ['can_be_deleted']
+
+$memberRevoked = $member->getRevokedPermissions();
+// Returns: ['can_remove_members']
 ```
 
 #### `getEffectivePermissions(): array`
 
-Get effective permissions (allowed - revoked).
+Get effective abilities (allowed - revoked).
 
 ```php
 $effective = $article->getEffectivePermissions();
 // Returns: allowed_permissions minus revoked_permissions
+
+$memberEffective = $member->getEffectivePermissions();
+// Returns: member's effective abilities
 ```
 
 ### Facade: `EntityPermission`
@@ -789,52 +924,84 @@ use Akindutire\Authorization\Facades\EntityPermission;
 
 #### `subject(Model $subject): PermissionSvc`
 
-Set the subject entity.
+Set the subject entity to check abilities on.
 
 ```php
+// Check abilities on an Article
 EntityPermission::subject($article)
+
+// Check abilities on a TeamMember
+EntityPermission::subject($member)
+
+// Check abilities on an Organization
+EntityPermission::subject($org)
 ```
 
 #### `hasAny(array $actions): bool`
 
-Check if subject has any permission.
+Check if subject has any of the specified abilities.
 
 ```php
-EntityPermission::subject($article)->hasAny(['can_broadcast'])
+// Check Article abilities
+EntityPermission::subject($article)->hasAny(['can_be_published', 'can_be_featured'])
+
+// Check TeamMember abilities
+EntityPermission::subject($member)->hasAny(['can_invite', 'can_manage_billing'])
 ```
 
 #### `hasAll(array $actions): bool`
 
-Check if subject has all permissions.
+Check if subject has all specified abilities.
 
 ```php
-EntityPermission::subject($article)->hasAll(['can_edit', 'can_publish'])
+// Check Article has both abilities
+EntityPermission::subject($article)->hasAll(['can_be_edited', 'can_be_published'])
+
+// Check TeamMember has all abilities
+EntityPermission::subject($member)->hasAll(['can_invite', 'can_view_analytics'])
 ```
 
 #### `getAbilities(string $role): array`
 
-Get abilities for a specific role from config.
+Get ability template for a specific role from config.
 
 ```php
-$abilities = EntityPermission::getAbilities('owner');
+// Get ability templates from config
+$editorAbilities = EntityPermission::getAbilities('article_editor');
+$adminAbilities = EntityPermission::getAbilities('team_admin');
+
+// Grant them to entities
+$article->grantPermission($editorAbilities);
+$member->grantPermission($adminAbilities);
 ```
 
 ### Attributes
 
 #### `#[HasAny(array $actions, string $model, string $modelProperty = 'id')]`
 
-Annotates method. Require at least one permission.
+Annotates method. Require entity to have at least one ability.
 
 ```php
-#[HasAny(['can_edit'], Article::class, 'id')]
+// Check if Article has ability to be edited
+#[HasAny(['can_be_edited'], Article::class, 'id')]
+
+// Check if TeamMember has invite ability
+#[HasAny(['can_invite'], TeamMember::class, 'id')]
+
+// Check by custom property
+#[HasAny(['can_be_published'], Article::class, 'slug')]
 ```
 
 #### `#[HasAll(array $actions, string $model, string $modelProperty = 'id')]`
 
-Annotates method. Require all permissions.
+Annotates method. Require entity to have all specified abilities.
 
 ```php
-#[HasAll(['can_edit', 'can_publish'], Article::class, 'id')]
+// Article must have both abilities
+#[HasAll(['can_be_edited', 'can_be_published'], Article::class, 'id')]
+
+// TeamMember must have both abilities
+#[HasAll(['can_invite', 'can_manage_billing'], TeamMember::class, 'id')]
 ```
 
 #### `#[SubjectValue(string $key)]`
@@ -892,17 +1059,19 @@ class Article extends Model
 
 ```php
 // config/akindutire-authorization.php
-'indexed_properties' => ['uuid', 'email', 'slug'],
+'indexed_properties' => ['uuid', 'slug', 'tenant_id'],
 
-// And use them in attributes
-#[HasAny(['can_edit'], User::class, 'uuid')]
+// And use them in attributes for different entities
+#[HasAny(['can_be_published'], Article::class, 'slug')]
+#[HasAny(['can_invite'], TeamMember::class, 'uuid')]
+#[HasAny(['can_use_api'], Organization::class, 'tenant_id')]
 ```
 
 ❌ **Don't:**
 
 ```php
 // Using unindexed property
-#[HasAny(['can_edit'], User::class, 'custom_field')]
+#[HasAny(['can_be_edited'], Article::class, 'custom_field')]
 // Without adding 'custom_field' to indexed_properties
 ```
 
@@ -911,26 +1080,35 @@ class Article extends Model
 ✅ **Do (Best for large applications):**
 
 ```php
-enum AppActions: string {
-    case CAN_EDIT = 'can_edit';
-    case CAN_DELETE = 'can_delete';
-    case CAN_PUBLISH = 'can_publish';
+// Define entity-specific ability enums
+enum ArticleAbilities: string {
+    case CAN_BE_EDITED = 'can_be_edited';
+    case CAN_BE_DELETED = 'can_be_deleted';
+    case CAN_BE_PUBLISHED = 'can_be_published';
 }
 
-#[HasAny([AppActions::CAN_EDIT->value], Article::class)]
+enum TeamMemberAbilities: string {
+    case CAN_INVITE = 'can_invite';
+    case CAN_MANAGE_BILLING = 'can_manage_billing';
+}
+
+// Use in attributes
+#[HasAny([ArticleAbilities::CAN_BE_EDITED->value], Article::class)]
+#[HasAny([TeamMemberAbilities::CAN_INVITE->value], TeamMember::class)]
 ```
 
 **Benefits:**
 
-- IDE autocomplete for all available permissions
+- IDE autocomplete for all available abilities
 - Compile-time checking prevents typos
-- Centralized permission definitions
+- Centralized ability definitions per entity type
 - Easy refactoring
 
 ✅ **Also acceptable (for smaller applications):**
 
 ```php
-#[HasAny(['can_edit'], Article::class)] // Direct strings work fine
+#[HasAny(['can_be_edited'], Article::class)] // Direct strings work fine
+#[HasAny(['can_invite'], TeamMember::class)]
 ```
 
 ### 4. Warm Cache in Deployment (Optional but Recommended)
@@ -1012,23 +1190,27 @@ CACHE_DRIVER=array # Lost on every request
 ✅ **Do (Race-condition safe):**
 
 ```php
-// Atomic single permission
-$article->grantPermission('can_broadcast');
+// Atomic single ability grant to an Article
+$article->grantPermission('can_be_published');
 
-// Atomic batch operation
-$article->grantPermission(['can_broadcast', 'can_publish']);
+// Atomic batch operation for multiple abilities
+$article->grantPermission(['can_be_edited', 'can_be_published', 'can_be_featured']);
+
+// Atomic operations work on any entity
+$member->grantPermission(['can_invite', 'can_manage_billing']);
+$org->grantPermission(['can_use_api', 'can_export_data']);
 ```
 
 ❌ **Don't (Race condition possible):**
 
 ```php
 // Manual array manipulation - NOT atomic
-$perms = $article->getAllowedPermissions();
-$perms[] = 'can_broadcast';
+$abilities = $article->getAllowedPermissions();
+$abilities[] = 'can_be_published';
 // No safe public method for this - use grantPermission() instead
 ```
 
-**Why it matters:** In high-concurrency scenarios (multiple admins updating permissions simultaneously), atomic operations prevent lost updates.
+**Why it matters:** In high-concurrency scenarios (multiple processes updating entity abilities simultaneously), atomic operations prevent lost updates.
 
 ---
 
@@ -1078,19 +1260,23 @@ protected $casts = [
 Route::put('/articles/{article_id}', ...); // Must match SubjectValue key
 ```
 
-### Slow Permission Checks (>100ms)
+### Slow Ability Checks (>100ms)
 
 **Diagnosis:**
 
 ```php
-// Enable query log
+// Enable query log to check if caching is working
 DB::enableQueryLog();
-$article->hasPermission('can_edit');
+$article->hasPermission('can_be_edited');
 $queries = DB::getQueryLog();
 
 if (count($queries) > 1) {
     // Multiple queries = caching not working
 }
+
+// Works for any entity
+$member->hasPermission('can_invite');
+$org->hasPermission('can_use_api');
 ```
 
 **Solutions:**
@@ -1111,7 +1297,7 @@ php artisan migrate # Run the index migration
 
 **Error:** `SQLSTATE[40001]: Serialization failure: 1213 Deadlock found`
 
-**Cause:** Concurrent permission updates
+**Cause:** Concurrent entity ability updates
 
 **Solution:** Already handled via atomic operations. If using legacy CSV:
 
@@ -1124,62 +1310,67 @@ protected $casts = [
 
 ### High Memory Usage
 
-**Symptoms:** PHP processes using >512MB RAM, slow permission checks
+**Symptoms:** PHP processes using >512MB RAM, slow ability checks
 
 **Diagnosis:**
 
 ```php
+// Check any entity's ability storage size
 $article = Article::find(1);
 $jsonSize = strlen(json_encode($article->allowed_permissions));
 $count = count($article->allowed_permissions);
 
-echo "Permission JSON size: {$jsonSize} bytes\n";
-echo "Permission count: {$count}\n";
-echo "Average bytes per permission: " . ($count > 0 ? $jsonSize / $count : 0) . "\n";
+echo "Ability JSON size: {$jsonSize} bytes\n";
+echo "Ability count: {$count}\n";
+echo "Average bytes per ability: " . ($count > 0 ? $jsonSize / $count : 0) . "\n";
 
-// If >10KB, permissions list is too large
-// Recommended: <10KB (250-400 permissions)
+// If >10KB, abilities list is too large
+// Recommended: <10KB (250-400 abilities)
+
+// Works for any entity
+$member = TeamMember::find(1);
+$memberSize = strlen(json_encode($member->allowed_permissions));
 ```
 
-**Solutions for Granular Permission Systems:**
+**Solutions for Granular Ability Systems:**
 
 **1. Enable Size Validation (Recommended)**
 
-Prevent oversized permission arrays via configuration:
+Prevent oversized ability arrays via configuration:
 
 ```php
 // config/akindutire-authorization.php
 'max_permission_size_bytes' => 10240, // 10KB limit
-'max_permission_count' => 500,        // Max 500 permissions
+'max_permission_count' => 500,        // Max 500 abilities
 
 // Disable validation (not recommended for production)
 'max_permission_size_bytes' => null,
 'max_permission_count' => null,
 ```
 
-**2. Use Permission Namespacing**
+**2. Use Ability Namespacing**
 
-Group related permissions with dot notation for better organization:
+Group related abilities with dot notation for better organization:
 
 ```php
-// ❌ Before: Many individual permissions (verbose)
+// ❌ Before: Many individual abilities (verbose)
 $article->grantPermission([
-    'can_edit',
-    'can_delete',
-    'can_publish',
-    'can_unpublish',
-    'can_archive',
-    'can_restore',
-    'can_duplicate',
-    'can_export',
-    'can_import',
-    'can_translate',
-    'can_schedule',
-    'can_preview',
-    // ... 200+ more permissions
+    'can_be_edited',
+    'can_be_deleted',
+    'can_be_published',
+    'can_be_unpublished',
+    'can_be_archived',
+    'can_be_restored',
+    'can_be_duplicated',
+    'can_be_exported',
+    'can_be_imported',
+    'can_be_translated',
+    'can_be_scheduled',
+    'can_be_previewed',
+    // ... 200+ more abilities
 ]);
 
-// ✅ After: Namespaced permissions (organized)
+// ✅ After: Namespaced abilities (organized, model-agnostic)
 $article->grantPermission([
     'article.edit',
     'article.delete',
@@ -1192,19 +1383,27 @@ $article->grantPermission([
     'comments.delete',
     // Easier to manage, same granularity
 ]);
+
+// Works for any entity type
+$member->grantPermission([
+    'team.invite',
+    'team.remove',
+    'billing.view',
+    'billing.manage',
+]);
 ```
 
-**3. Use Shorter Permission Names**
+**3. Use Shorter Ability Names**
 
 Use concise abbreviations to reduce JSON size:
 
 ```php
-// ❌ Verbose: 45 bytes per permission average
-'can_edit_article_metadata'
-'can_delete_article_permanently'
-'can_schedule_article_publishing'
+// ❌ Verbose: 45 bytes per ability average
+'can_be_edited_with_metadata'
+'can_be_deleted_permanently'
+'can_be_scheduled_for_publishing'
 
-// ✅ Concise: 15 bytes per permission average
+// ✅ Concise: 15 bytes per ability average (model-agnostic style)
 'article.edit'
 'article.delete'
 'article.schedule'
@@ -1212,39 +1411,44 @@ Use concise abbreviations to reduce JSON size:
 // 3x reduction in storage size
 ```
 
-**4. Batch Related Permissions**
+**4. Batch Related Abilities**
 
-Instead of hundreds of individual permissions, group by feature:
+Instead of hundreds of individual abilities, group by feature:
 
 ```php
-// ❌ Too granular (500+ permissions)
+// ❌ Too granular (500+ abilities)
 ['article.edit.title', 'article.edit.body', 'article.edit.meta',
  'article.edit.tags', 'article.edit.category', 'article.edit.author', ...]
 
-// ✅ Feature-level permissions (manageable)
+// ✅ Feature-level abilities (manageable)
 ['article.edit', 'article.delete', 'article.publish', 'analytics.view']
 
-// Check for specific sub-features in application logic, not permissions
+// Check for specific sub-features in application logic, not abilities
 if ($article->hasPermission('article.edit')) {
     // Application decides which fields are editable
+}
+
+// Works for any entity
+if ($member->hasPermission('team.manage')) {
+    // Application logic determines specific management capabilities
 }
 ```
 
 **When to Use Each Approach:**
 
-| Permissions | Recommended Approach                                              |
-| ----------- | ----------------------------------------------------------------- |
-| <100        | Default JSON column                                               |
-| 100-500     | Namespacing + shorter names                                       |
-| >500        | Re-evaluate permission granularity, use feature-level permissions |
+| Abilities | Recommended Approach                                            |
+| --------- | --------------------------------------------------------------- |
+| <100      | Default JSON column                                             |
+| 100-500   | Namespacing + shorter names                                     |
+| >500      | Re-evaluate ability granularity, use feature-level abilities    |
 
 **Production Checklist:**
 
 - [ ] Configure size limits in config file
-- [ ] Monitor permission JSON sizes in production
-- [ ] Use namespacing for logical grouping (e.g., `article.edit`, not `can_edit_article`)
-- [ ] Keep permission names short and meaningful
-- [ ] Review permission list regularly, remove unused permissions
+- [ ] Monitor ability JSON sizes in production
+- [ ] Use namespacing for logical grouping (e.g., `article.edit`, not `can_be_edited_article`)
+- [ ] Keep ability names short and meaningful
+- [ ] Review ability list regularly, remove unused abilities
 
 ### Missing Indexes
 
@@ -1364,12 +1568,18 @@ php artisan permission:cache
 php artisan tinker
 
 >>> $article = Article::first();
->>> $article->grantPermission('can_test');
->>> $article->hasPermission('can_test');
+>>> $article->grantPermission('can_be_edited');
+>>> $article->hasPermission('can_be_edited');
 => true
 
 >>> Cache::has('entity.App.Models.Article.id.' . $article->id);
 => true  // Cache is working
+
+// Test with any entity
+>>> $member = TeamMember::first();
+>>> $member->grantPermission('can_invite');
+>>> $member->hasPermission('can_invite');
+=> true
 ```
 
 ### Data Migration (CSV → JSON)
@@ -1395,7 +1605,7 @@ Article::chunk(1000, function($articles) {
 
 ### ⚠️ Critical: Always Add `$casts`
 
-**Why:** Without `$casts`, permissions use legacy CSV format:
+**Why:** Without `$casts`, entity abilities use legacy CSV format:
 
 - 75% more storage
 - String parsing overhead on every check
@@ -1436,19 +1646,20 @@ config('akindutire-authorization.entity_cache_ttl')
 
 ### ⚠️ Generate Migrations Per Table
 
-You must generate a separate migration for each table that needs permissions:
+You must generate a separate migration for each entity table that will have abilities:
 
 ```bash
 # Generate a migration for each entity table
-php artisan make:permission-migration users
 php artisan make:permission-migration articles
-php artisan make:permission-migration posts
+php artisan make:permission-migration team_members
+php artisan make:permission-migration organizations
+php artisan make:permission-migration users
 
 # Then run all migrations
 php artisan migrate
 ```
 
-Each command creates a timestamped migration file customized for the specified table.
+Each command creates a timestamped migration file customized for the specified table, adding ability columns.
 
 ### ⚠️ Cache Warming Required
 
@@ -1464,12 +1675,16 @@ Use `grantPermission()` / `revokePermission()`, not manual array manipulation:
 
 ```php
 // ✅ Atomic, race-condition safe
-$article->grantPermission('can_broadcast');
+$article->grantPermission('can_be_published');
 
 // ❌ Race condition possible
-$perms = $article->getAllowedPermissions();
-$perms[] = 'can_broadcast';
+$abilities = $article->getAllowedPermissions();
+$abilities[] = 'can_be_published';
 // Don't do this - use grantPermission() instead
+
+// Works for any entity
+$member->grantPermission('can_invite');
+$org->grantPermission('can_use_api');
 ```
 
 ---
@@ -1478,16 +1693,16 @@ $perms[] = 'can_broadcast';
 
 Before deploying to production:
 
-- [ ] All models have `$casts` for `allowed_permissions` and `revoked_permissions`
-- [ ] `config/akindutire-authorization.php` lists all tables in `indexed_tables`
+- [ ] All entity models have `$casts` for `allowed_permissions` and `revoked_permissions`
+- [ ] `config/akindutire-authorization.php` lists all entity tables in `indexed_tables` (articles, team_members, organizations, etc.)
 - [ ] `config/akindutire-authorization.php` lists all lookup properties in `indexed_properties`
 - [ ] Redis is configured and operational
-- [ ] Migrations have been run (`php artisan migrate`)
-- [ ] Permission cache warming added to deployment (`php artisan permission:cache`)
+- [ ] Migrations have been run for all entity tables (`php artisan migrate`)
+- [ ] Ability cache warming added to deployment (`php artisan permission:cache`)
 - [ ] Cache TTL configured appropriately (`entity_cache_ttl`)
 - [ ] Exception messages customized if needed
 - [ ] Cache hit rate monitored (target: >95%)
-- [ ] Permission check latency monitored (target: <50ms p99)
+- [ ] Ability check latency monitored (target: <50ms p99)
 
 ---
 

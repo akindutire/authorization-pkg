@@ -1,22 +1,90 @@
-# Laravel Authorization Package
+# Laravel Model-Agnostic Authorization
 
-A modern, attribute-based authorization package for Laravel 9+ that works with any Eloquent model using PHP 8 attributes. **Built for scale** - optimized for applications with millions of entities.
+A modern, attribute-based authorization package for Laravel 9+ that works with **any** Eloquent model using PHP 8 attributes. Unlike traditional user-centric permission systems, this package lets you attach abilities directly to any model - Articles, Organizations, TeamMembers, or any entity in your application.
+
+**Built for scale** - optimized for applications with millions of entities.
 
 [![Latest Version](https://img.shields.io/packagist/v/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
 [![Total Downloads](https://img.shields.io/packagist/dt/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
 [![License](https://img.shields.io/packagist/l/akindutire/authorization-pkg.svg?style=flat-square)](https://packagist.org/packages/akindutire/authorization-pkg)
 
+## Why Model-Agnostic?
+
+Traditional systems: `User` → has Permissions → to perform Actions → on Resources
+
+This package: `Subject` (any model) → has Abilities → validated via Attributes
+
+```php
+// ❌ Traditional: User-centric - doesn't model entity-specific abilities
+$user->hasPermission('edit-article');
+
+// ✅ This package: Model-agnostic - abilities belong to entities
+#[HasAny(['can_edit'], Article::class, 'id')]
+public function update(int $articleId) {
+    // The ARTICLE itself has 'can_edit' ability
+    // The entity being modified controls who can modify it
+}
+```
+
+## Key Concepts
+
+- **Subject**: Any Eloquent model with the `HasPermissions` trait (User, Article, TeamMember, Organization, etc.)
+- **Abilities**: Actions a subject can perform (`can_edit`, `can_publish`, `can_invite`)
+- **Attributes**: PHP 8 attributes declaring ability requirements (`#[HasAny]`, `#[HasAll]`)
+- **Validation**: Automatic checking via `ValidateSubjectAction` middleware
+
+### How It Works: Architecture Flow
+
+```
+Controller Method
+    ↓
+[Attribute Declaration]
+#[HasAny(['can_edit'], Article::class, 'id')]
+    ↓
+[Middleware: ValidateSubjectAction]
+    ↓
+[Subject Resolution]
+- Lookup model by property: Article::where('id', $value)
+- Extract abilities from database columns
+    ↓
+[Permission Service]
+- Check if subject has required abilities
+- Respect revoked abilities
+    ↓
+[Cache Result]
+- Multi-layer caching for performance
+    ↓
+[Allow/Deny Request]
+```
+
+### Terminology: Why "Abilities"?
+
+**In code**: The package uses `permissions` (columns/methods) for backward compatibility with Laravel conventions.
+
+**In concept**: We call these **abilities** because:
+- **Model-agnostic**: "Article has ability to be edited" (not "Article has permission")
+- **Subject-focused**: Abilities belong to the entity being authorized
+- **Industry standard**: CanCanCan (Rails) and CASL (JavaScript) use "abilities"
+- **Clear semantics**: Describes what subjects *can do*
+
+| Alternative | Why Not? |
+|-------------|----------|
+| Capabilities | Conflicts with PHP extensions |
+| Grants | Sounds temporary |
+| Actions | Too generic, conflicts with controllers |
+| Permissions | Implies user-centric (kept in code for compatibility) |
+
 ## Features
 
-- **Attribute-based authorization** - Use PHP 8 attributes for clean, declarative permission checks
-- **Auto-invalidating cache** - Automatically detects attribute changes without manual cache clearing
-- **Model-agnostic** - Works with any Eloquent model (User, Article, TeamMember, Post, etc.)
-- **Flexible subject resolution** - Lookup subjects by any property (id, uuid, email, slug, etc.)
-- **Permission inheritance** - Supports allowed and revoked permissions
-- **Facade support** - Easy-to-use facade for permission checks
-- **Middleware included** - Automatic permission validation using reflection
-- **Production-ready performance** - Multi-layer caching, JSON storage, optimized for 500M+ entities
-- **Race condition safe** - Atomic permission updates using database-level operations
+- 🎯 **Model-agnostic** - Works with any Eloquent model, not just Users
+- 🏷️ **Attribute-based** - Declarative authorization using PHP 8 attributes
+- ⚡ **Auto-invalidating cache** - Detects attribute changes without manual clearing
+- 🔍 **Flexible resolution** - Lookup subjects by any property (id, uuid, email, slug)
+- 🎭 **Revocation support** - Explicitly deny abilities that override grants
+- 🎨 **Facade included** - Easy-to-use facade for programmatic checks
+- 🔒 **Middleware validation** - Automatic checks using reflection
+- 🚀 **Production-ready** - Multi-layer caching, optimized for 500M+ entities
+- ⚛️ **Race condition safe** - Atomic updates using database operations
 
 ## Performance Highlights
 
@@ -26,7 +94,360 @@ A modern, attribute-based authorization package for Laravel 9+ that works with a
 - **Zero runtime reflection overhead** via metadata caching
 - **Horizontal scalability** - tested with 500M entities
 
-📊 See [SCALABILITY.md](SCALABILITY.md) for detailed benchmarks and optimization guide.
+📊 See [SCALABILITY.md](SCALABILITY.md) for detailed benchmarks.
+
+## Quick Start
+
+### 1. Install
+
+```bash
+composer require akindutire/authorization-pkg
+```
+
+### 2. Add Abilities to Any Model
+
+```php
+use Akindutire\Authorization\Traits\HasPermissions;
+
+// Works with ANY Eloquent model
+class Article extends Model
+{
+    use HasPermissions;
+
+    protected $casts = [
+        'allowed_permissions' => 'array',  // What this article can do
+        'revoked_permissions' => 'array',  // Explicitly denied
+    ];
+}
+
+class TeamMember extends Model
+{
+    use HasPermissions;
+
+    protected $casts = [
+        'allowed_permissions' => 'array',  // What this member can do
+        'revoked_permissions' => 'array',
+    ];
+}
+
+class Organization extends Model
+{
+    use HasPermissions;
+
+    protected $casts = [
+        'allowed_permissions' => 'array',  // What this org can do
+        'revoked_permissions' => 'array',
+    ];
+}
+```
+
+### 3. Grant Abilities
+
+```php
+// Articles have publication abilities
+$article = Article::find(1);
+$article->grantPermission(['can_be_edited', 'can_be_published']);
+
+// Team members have role-based abilities
+$member = TeamMember::find(1);
+$member->grantPermission(['can_invite', 'can_manage_billing']);
+
+// Organizations have feature abilities
+$org = Organization::find(1);
+$org->grantPermission(['can_use_api', 'can_white_label']);
+```
+
+### 4. Protect Controller Methods with Attributes
+
+```php
+use Akindutire\Authorization\Attributes\{HasAny, HasAll};
+use Akindutire\Authorization\Attributes\SubjectValue;
+
+class ArticleController
+{
+    // Check if Article has 'can_be_edited' ability
+    #[HasAny(['can_be_edited'], Article::class, 'id')]
+    public function update(
+        #[SubjectValue] int $id,
+        Request $request
+    ) {
+        // Only executes if the Article can be edited
+        $article = Article::find($id);
+        $article->update($request->all());
+    }
+
+    // Article must have BOTH abilities
+    #[HasAll(['can_be_published', 'can_be_featured'], Article::class, 'id')]
+    public function publish(#[SubjectValue] int $id) {
+        Article::find($id)->update(['published_at' => now()]);
+    }
+
+    // Works with any property, not just 'id'
+    #[HasAny(['can_be_viewed'], Article::class, 'slug')]
+    public function show(#[SubjectValue] string $slug) {
+        return Article::where('slug', $slug)->firstOrFail();
+    }
+}
+
+class TeamController
+{
+    // Check TeamMember abilities
+    #[HasAny(['can_invite'], TeamMember::class, 'member_id')]
+    public function invite(
+        #[SubjectValue('member_id')] Request $request
+    ) {
+        // TeamMember must have 'can_invite' ability
+    }
+}
+```
+
+### 5. Register Middleware
+
+```php
+// app/Http/Kernel.php
+protected $middlewareAliases = [
+    'validate.subject.action' => \Akindutire\Authorization\Middleware\ValidateSubjectAction::class,
+];
+
+// routes/web.php
+Route::middleware(['validate.subject.action'])->group(function () {
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::post('/articles/{id}/publish', [ArticleController::class, 'publish']);
+});
+```
+
+## Use Cases
+
+### 1. Content Management Systems
+
+```php
+// Articles control their own editability
+$article->grantPermission(['can_be_edited', 'can_be_deleted']);
+$article->revokePermission(['can_be_deleted']); // Make read-only
+
+#[HasAny(['can_be_edited'], Article::class, 'id')]
+public function update(int $id) { }
+```
+
+### 2. Multi-Tenant SaaS
+
+```php
+// Organizations have feature abilities
+$org->grantPermission(['can_use_api', 'can_export_data', 'can_white_label']);
+
+#[HasAll(['can_use_api'], Organization::class, 'org_id')]
+public function apiAccess(#[SubjectValue] int $org_id) { }
+```
+
+### 3. Team Collaboration
+
+```php
+// Team members have role-based abilities
+$member->grantPermission(['can_invite', 'can_view_analytics', 'can_manage_billing']);
+
+#[HasAny(['can_invite', 'can_manage_team'], TeamMember::class, 'id')]
+public function addMember(#[SubjectValue] int $id) { }
+```
+
+### 4. Resource Sharing
+
+```php
+// Documents have sharing abilities
+$document->grantPermission(['can_be_shared', 'can_be_commented']);
+
+#[HasAny(['can_be_shared'], Document::class, 'uuid')]
+public function share(#[SubjectValue] string $uuid) { }
+```
+
+## Core API
+
+### Granting and Revoking Abilities
+
+```php
+// Grant abilities (single or multiple)
+$subject->grantPermission('can_edit');
+$subject->grantPermission(['can_edit', 'can_delete']);
+
+// Revoke abilities (explicitly deny)
+$subject->revokePermission('can_delete');
+$subject->revokePermission(['can_delete', 'can_admin']);
+
+// Check abilities
+$subject->hasPermission('can_edit');              // Check single
+$subject->hasAnyPermission(['can_edit', 'can_view']); // Has any
+$subject->hasAllPermissions(['can_edit', 'can_publish']); // Has all
+
+// Get abilities
+$allowed = $subject->getAllowedPermissions();     // ['can_edit', 'can_view']
+$revoked = $subject->getRevokedPermissions();     // ['can_delete']
+$effective = $subject->getEffectivePermissions(); // Allowed minus revoked
+```
+
+### Facade Usage
+
+```php
+use Akindutire\Authorization\Facades\EntityPermission;
+
+// Check if subject has abilities
+$canEdit = EntityPermission::subject($article)->hasAny(['can_be_edited']);
+$canPublish = EntityPermission::subject($article)->hasAll(['can_be_published', 'can_be_featured']);
+
+// Get role-based ability templates from config
+$ownerAbilities = EntityPermission::getAbilities('owner');
+```
+
+### Attribute Options
+
+```php
+// Basic usage
+#[HasAny(['can_edit'], Article::class, 'id')]
+
+// Custom property resolution
+#[HasAny(['can_edit'], Article::class, 'uuid')]
+#[HasAny(['can_edit'], Article::class, 'slug')]
+
+// Extract subject value from request
+#[HasAny(['can_edit'], Article::class, 'id')]
+public function update(
+    #[SubjectValue('article_id')] Request $request
+) { }
+
+// Require all abilities
+#[HasAll(['can_publish', 'can_feature'], Article::class, 'id')]
+```
+
+## Configuration
+
+### Ability Templates (Optional)
+
+Define reusable ability templates in config:
+
+```php
+// config/akindutire-authorization.php
+'abilities' => [
+    'article_editor' => ['can_be_edited', 'can_be_deleted'],
+    'article_publisher' => ['can_be_edited', 'can_be_published', 'can_be_featured'],
+    'team_admin' => ['can_invite', 'can_remove', 'can_manage_billing'],
+    'team_member' => ['can_invite', 'can_view_analytics'],
+],
+```
+
+Then use them:
+
+```php
+$article->grantPermission(EntityPermission::getAbilities('article_publisher'));
+$member->grantPermission(EntityPermission::getAbilities('team_admin'));
+```
+
+### Custom Column Names
+
+```php
+'column_names' => [
+    'allowed_permissions' => 'abilities',        // Rename columns
+    'revoked_permissions' => 'denied_abilities',
+],
+```
+
+### Cache Configuration
+
+```php
+'entity_cache_ttl' => 300,  // 5 minutes
+'reflection_cache_enabled' => true,
+'auto_invalidate_reflection_cache' => true,
+```
+
+## Database Setup
+
+### Generate Migrations
+
+```bash
+php artisan make:permission-migration articles
+php artisan make:permission-migration team_members
+php artisan make:permission-migration organizations
+```
+
+This creates:
+
+```php
+Schema::table('articles', function (Blueprint $table) {
+    $table->json('allowed_permissions')->nullable();
+    $table->json('revoked_permissions')->nullable();
+    // Database-specific indexes for optimal performance
+});
+```
+
+### Run Migrations
+
+```bash
+php artisan migrate
+```
+
+## Advanced Examples
+
+### Complex Controller
+
+```php
+class ArticleController
+{
+    #[HasAny(['can_be_edited'], Article::class, 'id')]
+    public function update(#[SubjectValue] int $id, Request $request)
+    {
+        $article = Article::find($id);
+        $article->update($request->validated());
+        return response()->json($article);
+    }
+
+    #[HasAll(['can_be_published', 'can_be_featured'], Article::class, 'id')]
+    public function publishAndFeature(#[SubjectValue] int $id)
+    {
+        $article = Article::find($id);
+        $article->update([
+            'published_at' => now(),
+            'featured' => true,
+        ]);
+        return response()->json($article);
+    }
+
+    #[HasAny(['can_be_viewed'], Article::class, 'slug')]
+    public function showBySlug(#[SubjectValue] string $slug)
+    {
+        return Article::where('slug', $slug)->firstOrFail();
+    }
+}
+```
+
+### Dynamic Ability Management
+
+```php
+// Grant abilities based on business logic
+if ($user->isAdmin()) {
+    $article->grantPermission(['can_be_edited', 'can_be_deleted', 'can_be_published']);
+} elseif ($user->isEditor()) {
+    $article->grantPermission(['can_be_edited']);
+}
+
+// Temporarily revoke abilities
+$article->revokePermission(['can_be_deleted']); // Lock article
+
+// Later restore
+$article->grantPermission(['can_be_deleted']); // Removes from revoked
+```
+
+### Multi-Property Resolution
+
+```php
+// By ID
+#[HasAny(['can_edit'], User::class, 'id')]
+public function updateById(#[SubjectValue] int $id) { }
+
+// By UUID
+#[HasAny(['can_edit'], User::class, 'uuid')]
+public function updateByUuid(#[SubjectValue] string $uuid) { }
+
+// By email
+#[HasAny(['can_login'], User::class, 'email')]
+public function authenticate(#[SubjectValue] string $email) { }
+```
 
 ## Requirements
 
@@ -34,516 +455,47 @@ A modern, attribute-based authorization package for Laravel 9+ that works with a
 - Laravel 9.0 or higher
 - Redis or Memcached (recommended for production)
 
-## Installation
-
-Install the package via Composer:
-
-```bash
-composer require akindutire/authorization-pkg
-```
-
-The package will auto-register via Laravel's package discovery.
-
-## Setup
-
-### 1. Publish Configuration
-
-```bash
-php artisan vendor:publish --tag=authorization-config
-```
-
-This creates `config/akindutire-authorization.php` for customizing default permissions.
-
-### 2. Generate and Run Migrations
-
-Generate a migration for each table that needs permissions:
-
-```bash
-php artisan make:permission-migration users
-php artisan make:permission-migration articles
-php artisan make:permission-migration team_members
-```
-
-This creates timestamped migrations that add JSON permission columns with database-specific indexes for optimal performance.
-
-Then run the migrations:
-
-```bash
-php artisan migrate
-```
-
-### 3. Add Trait and Configure Models
-
-Add the `HasPermissions` trait to any model that needs authorization:
-
-```php
-use Akindutire\Authorization\Traits\HasPermissions;
-
-class User extends Authenticatable
-{
-    use HasPermissions;
-
-    // ⚠️ Required for JSON support and performance
-    protected $casts = [
-        'allowed_permissions' => 'array',
-        'revoked_permissions' => 'array',
-    ];
-}
-
-class Article extends Model
-{
-    use HasPermissions;
-
-    protected $casts = [
-        'allowed_permissions' => 'array',
-        'revoked_permissions' => 'array',
-    ];
-}
-```
-
-**Note:** The `$casts` configuration is now automatically added by the trait, but you can explicitly define it for better clarity and IDE support:
-
-- Enables JSON storage (vs legacy CSV strings)
-- Ensures automatic cache invalidation
-- Provides optimal performance at scale
-
-### 4. Register Middleware
-
-Add the middleware to your `app/Http/Kernel.php`:
-
-```php
-protected $middlewareAliases = [
-    // ...
-    'validate.subject.action' => \Akindutire\Authorization\Middleware\ValidateSubjectAction::class,
-];
-```
-
-Or apply it to routes:
-
-```php
-Route::middleware(['validate.subject.action'])->group(function () {
-    // Your routes
-});
-```
-
-## Usage
-
-### Defining Actions/Permissions
-
-Define your application's actions in the `AppActions` enum:
-
-```php
-use Akindutire\Authorization\Enums\AppActions;
-
-enum AppActions: string
-{
-    case CAN_UPDATE_COMPANY = 'can_update_company';
-    case CAN_INVITE_MEMBER = 'can_invite_member';
-    case CAN_VIEW_PITCH = 'can_view_pitch';
-    // Add your actions here
-}
-```
-
-### Protecting Controller Methods
-
-Use PHP 8 attributes to protect controller methods:
-
-```php
-use Akindutire\Authorization\Attributes\HasAny;
-use Akindutire\Authorization\Attributes\HasAll;
-use Akindutire\Authorization\Attributes\SubjectValue;
-use App\Models\TeamMember;
-
-class CompanyController extends Controller
-{
-    // Check if team member has ANY of the specified permissions
-    #[HasAny([AppActions::CAN_UPDATE_COMPANY->value], TeamMember::class, 'id')]
-    public function update(#[SubjectValue('member_id')] Request $request)
-    {
-        // member_id will be extracted from $request->member_id
-        // TeamMember with that id will be looked up
-        // Their permissions will be checked
-    }
-
-    // Check if team member has ALL of the specified permissions
-    #[HasAll([
-        AppActions::CAN_UPDATE_COMPANY->value,
-        AppActions::CAN_INVITE_MEMBER->value
-    ], TeamMember::class, 'id')]
-    public function invite(#[SubjectValue('member_id')] Request $request)
-    {
-        // Requires both permissions
-    }
-}
-```
-
-### Attribute Parameters
-
-**`#[HasAny(array $actions, string $modelClass, string $lookupProperty)]`**
-
-- `$actions` - Array of permission strings to check
-- `$modelClass` - The Eloquent model class to lookup (e.g., `TeamMember::class`)
-- `$lookupProperty` - The property to use for lookup (default: `'id'`)
-
-**`#[SubjectValue(string $key)]`**
-
-- `$key` - The request parameter key to extract
-
-The middleware extracts the value in this priority order:
-
-1. `$request->input($key)` - Form data (POST/PUT)
-2. `$request->route($key)` - Route parameters (e.g., `/users/{member_id}`)
-3. `$request->query($key)` - Query strings (e.g., `?member_id=123`)
-4. `$request->json($key)` - JSON payload
-
-### Managing Permissions
-
-#### Granting Permissions
-
-```php
-$user = User::find(1);
-
-// Grant multiple permissions at once
-$user->grantPermission(['can_view', 'can_edit', 'can_delete']);
-
-// Grant a single permission
-$user->grantPermission('can_update_company');
-
-
-```
-
-#### Revoking Permissions
-
-```php
-// Revoke a single permission (atomic)
-$user->revokePermission('can_delete');
-
-// Revoke multiple permissions (batch)
-$user->revokePermission(['can_delete', 'can_edit']);
-```
-
-#### Checking Permissions
-
-```php
-// Check single permission
-if ($user->hasPermission('can_edit')) {
-    // User has permission
-}
-
-// Check if has any of the permissions
-if ($user->hasAnyPermission(['can_edit', 'can_delete'])) {
-    // User has at least one
-}
-
-// Check if has all permissions
-if ($user->hasAllPermissions(['can_edit', 'can_view'])) {
-    // User has all
-}
-
-// Get effective permissions (allowed - revoked)
-$permissions = $user->getEffectivePermissions();
-```
-
-### Using the Facade
-
-```php
-use Akindutire\Authorization\Facades\EntityPermission;
-
-$teamMember = TeamMember::find(1);
-
-// Check if member has any permission
-if (EntityPermission::subject($teamMember)->hasAny(['can_edit', 'can_view'])) {
-    // Has at least one
-}
-
-// Check if member has all permissions
-if (EntityPermission::subject($teamMember)->hasAll(['can_edit', 'can_view'])) {
-    // Has all
-}
-
-// Get abilities for a role
-$permissions = EntityPermission::getAbilities('owner');
-```
-
-### Configuring Abilities per Role
-
-This feature is more informational and does not persist to database
-In `config/akindutire-authorization.php`:
-
-```php
-'abilities' => [
-    'owner' => [
-        'can_update_company',
-        'can_invite_member',
-        'can_remove_member',
-        'can_view_pitch',
-        'can_update_pitch',
-    ],
-    'admin' => [
-        'can_invite_member',
-        'can_view_pitch',
-        'can_update_pitch',
-    ],
-    'member' => [
-        'can_view_pitch',
-    ],
-],
-```
-
-## How It Works
-
-1. **Middleware reads attributes** - `ValidateSubjectAction` uses reflection to read method attributes
-2. **Extract subject identifier** - Gets the value from Request (input/route/query/json)
-3. **Subject lookup** - Finds the subject (model) using the extracted value
-4. **Permission check** - Calls `hasAny()` or `hasAll()` on the `PermissionSvc`
-5. **Resolution** - Compares `allowed_permissions` - `revoked_permissions`
-6. **Authorization** - Returns 403 if unauthorized, continues if authorized
-
-### Request Flow Example 1
-
-```php
-// Route
-POST /company/update
-
-// Request data
-{
-    "member_id": 123,
-    "name": "New Company Name"
-}
-
-// Controller
-#[HasAny([AppActions::CAN_UPDATE->value], TeamMember::class, 'id')]
-public function update(#[SubjectValue('member_id')] Request $request)
-
-// Flow:
-// 1. Middleware extracts: $request->input('member_id') → 123
-// 2. Finds subject: TeamMember::where('id', 123)->first()
-// 3. Checks: $teamMember->allowed_permissions contains 'can_update'?
-// 4. If yes → continue, if no → throw 403
-```
-
-### Request Flow Example 2
-
-```php
-// Route: GET /company/123
-
-// web.php
-Route::get('/company/{company_id}', [CompanyController::class, 'get']);
-
-// Controller - Route params can be annotated directly as they are scalar values
-#[HasAny([AppActions::CAN_VIEW->value], Company::class, 'id')]
-public function get(#[SubjectValue()] $company_id)
-{
-    // $company_id is extracted directly from route parameter
-    $company = Company::find($company_id);
-    // Process...
-}
-
-// Flow:
-// 1. Middleware extracts: $company_id from route parameter → 123
-// 2. Finds subject: Company::where('id', 123)->first()
-// 3. Checks: $company->allowed_permissions contains 'can_view'?
-// 4. If yes → continue, if no → throw 403
-```
-
-## Advanced Usage
-
-### Custom Subject Lookup
-
-Lookup by different properties:
-
-```php
-// Lookup by UUID instead of ID
-#[HasAny([AppActions::CAN_EDIT->value], User::class, 'uuid')]
-public function update(#[SubjectValue('user_uuid')] Request $request)
-{
-    // Looks up User::where('uuid', $request->user_uuid)
-}
-```
-
-### Route Parameter Extraction
-
-```php
-// Extract from route parameters
-Route::put('/members/{member_id}', [Controller::class, 'update']);
-
-#[HasAny([AppActions::CAN_UPDATE->value], TeamMember::class, 'id')]
-public function update(#[SubjectValue('member_id')] Request $request)
-{
-    // Automatically extracts {member_id} from route
-}
-```
-
-## Exception Handling
-
-The package throws `ValidateSubjectActionException` when authorization fails:
-
-```php
-try {
-    // Protected action
-} catch (\Akindutire\Authorization\Exceptions\ValidateSubjectActionException $e) {
-    return response()->json(['error' => $e->getMessage()], 403);
-}
-```
-
-Customize the exception message in `config/akindutire-authorization.php`:
-
-```php
-'exception' => [
-    'message' => 'Custom access denied message',
-    'code' => 403,
-],
-```
-
-## Performance & Scalability
-
-This package is built for production applications at scale.
-
-### Configuration for Production
-
-```php
-// config/akindutire-authorization.php
-return [
-    // Cache entity lookups for 5 minutes (adjust based on your needs)
-    'entity_cache_ttl' => 300,
-
-    // Properties to index for cache invalidation
-    'cache_keys' => ['uuid', 'email', 'slug'],
-
-    // Tables to receive performance indexes
-    'indexed_tables' => ['users', 'articles', 'team_members'],
-
-    // Properties commonly used in lookups
-    'indexed_properties' => ['uuid', 'email', 'slug'],
-];
-```
-
-### Automatic Cache Invalidation
-
-The package automatically detects changes to attributes and invalidates the cache - no manual clearing needed!
-
-When you change:
-
-- Attribute parameters (e.g., different actions, subject class, or lookup property)
-- SubjectValue parameter names
-- Add/remove attributes from controller methods
-
-The cache automatically updates on the next request. No need to run `permission:cache-clear` after modifying attributes.
-
-**How it works:**
-
-```php
-// Before: Manual cache clearing required
-#[HasAny(['can_edit'], TeamMember::class, 'id')]
-// Deploy → run permission:cache-clear → works
-
-// Now: Automatic invalidation
-#[HasAny(['can_edit', 'can_delete'], TeamMember::class, 'id')]  // Changed!
-// Deploy → works immediately (cache key includes hash of attributes)
-```
-
-**Configuration:**
-
-```php
-// config/akindutire-authorization.php
-'auto_invalidate_reflection_cache' => true,  // Enabled by default
-```
-
-To disable (requires manual clearing after attribute changes):
-
-```bash
-PERMISSION_AUTO_INVALIDATE=false
-```
-
-### Deployment Commands
-
-```bash
-# Optional: Warm reflection metadata cache (if disabled auto-invalidation)
-php artisan permission:cache
-
-# Manual cache clearing (rarely needed with auto-invalidation)
-php artisan permission:cache-clear
-php artisan permission:cache-clear --reflection  # Only reflection metadata
-php artisan permission:cache-clear --entities    # Only entity caches
-```
-
-### Cache Configuration
-
-For production, use Redis:
-
-```bash
-# .env
-CACHE_DRIVER=redis
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-```
-
-### Performance Benchmarks
-
-| Metric                             | Without Optimization | With Optimization | Improvement         |
-| ---------------------------------- | -------------------- | ----------------- | ------------------- |
-| Permission check latency (p50)     | 280ms                | 8ms               | **97% faster**      |
-| Database queries/sec (10k req/sec) | 10,000               | 50                | **99.5% reduction** |
-| Cache hit rate                     | 0%                   | 99%+              | -                   |
-| Monthly infrastructure cost (AWS)  | $4,200               | $850              | **80% savings**     |
-
-**Tested with**: 50M users, 10M articles, 10k requests/second
-
-### Scalability Guide
-
-For detailed performance tuning, monitoring, and troubleshooting:
-
-📖 **[Read the complete Scalability Guide →](SCALABILITY.md)**
-
-Topics covered:
-
-- Multi-layer caching strategy
-- Database optimization & indexing
-- Deployment best practices
-- Monitoring & debugging
-- Troubleshooting common issues
-- Advanced cache strategies
-
-## Real-World Use Cases
-
-### E-commerce Platform
-
-```php
-// Articles can self-broadcast
-#[HasAny(['can_broadcast'], Article::class, 'id')]
-public function broadcast(#[SubjectValue('article_id')] Request $request) {
-    // Only articles with 'can_broadcast' permission
-}
-```
-
-### Multi-tenant SaaS
-
-```php
-// Team members with varying permissions
-#[HasAll(['can_invite', 'can_manage_billing'], TeamMember::class, 'uuid')]
-public function manageBilling(#[SubjectValue('member_uuid')] Request $request) {
-    // Requires both permissions
-}
-```
-
-### Content Management
-
-```php
-// Posts with analytics capabilities
-#[HasAny(['can_autosend_for_analytics'], Post::class, 'slug')]
-public function sendAnalytics(#[SubjectValue('post_slug')] Request $request) {
-    // Posts opt-in to analytics
-}
-```
+## Documentation
+
+- 📖 [Full Documentation](DOCUMENTATION.md)
+- 📈 [Scalability Guide](SCALABILITY.md)
+- 🔌 [API Reference](docs/api.html)
+- ⚡ [Quick Start](docs/quickstart.html)
+
+## Why This Package?
+
+| Traditional Systems                    | This Package                              |
+| -------------------------------------- | ----------------------------------------- |
+| User-centric                           | Model-agnostic                            |
+| Permissions on users                   | Abilities on any model                    |
+| `$user->can('edit-post')`              | `#[HasAny(['can_edit'], Article::class)]` |
+| Doesn't scale to entity-specific rules | Entity owns its abilities                 |
+| Complex policy classes                 | Declarative attributes                    |
+
+## Comparison
+
+| Feature             | Spatie Permission | Laravel Gates | This Package         |
+| ------------------- | ----------------- | ------------- | -------------------- |
+| Model-agnostic      | ❌ User-only      | ❌ User-only  | ✅ Any model         |
+| Attribute-based     | ❌                | ❌            | ✅                   |
+| Auto-caching        | ⚠️ Manual         | ❌            | ✅ Auto-invalidating |
+| Flexible resolution | ❌ ID only        | ❌            | ✅ Any property      |
+| Revocation support  | ❌                | ⚠️ Limited    | ✅ Native            |
+| Scale (entities)    | < 1M              | N/A           | 500M+ tested         |
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-## Changelog
+## Security
 
-See [CHANGELOG.md](CHANGELOG.md) for release history.
+If you discover any security issues, please email security@example.com instead of using the issue tracker.
+
+## Credits
+
+- [Akindutire Ayomide](https://github.com/akindutire)
+- [All Contributors](../../contributors)
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE) for more information.
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
