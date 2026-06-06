@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 
 class FacadeTest extends TestCase
 {
+    /** @test */
     #[Test]
     public function it_can_check_permissions_via_facade()
     {
@@ -25,6 +26,7 @@ class FacadeTest extends TestCase
         $this->assertFalse($hasDelete);
     }
 
+    /** @test */
     #[Test]
     public function it_can_check_all_permissions_via_facade()
     {
@@ -41,6 +43,7 @@ class FacadeTest extends TestCase
         $this->assertFalse($hasMissing);
     }
 
+    /** @test */
     #[Test]
     public function it_can_get_abilities_via_facade()
     {
@@ -50,6 +53,7 @@ class FacadeTest extends TestCase
         $this->assertNotEmpty($permissions);
     }
 
+    /** @test */
     #[Test]
     public function facade_respects_revoked_permissions()
     {

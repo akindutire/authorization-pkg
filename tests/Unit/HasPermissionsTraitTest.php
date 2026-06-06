@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 
 class HasPermissionsTraitTest extends TestCase
 {
+    /** @test */
     #[Test]
     public function it_auto_initializes_casts_for_permission_columns()
     {
@@ -22,6 +23,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertEquals('array', $casts['revoked_permissions']);
     }
 
+    /** @test */
     #[Test]
     public function it_can_grant_single_permission()
     {
@@ -39,6 +41,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_edit', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_can_grant_multiple_permissions_at_once()
     {
@@ -57,6 +60,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_delete', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_does_not_duplicate_permissions_when_granting()
     {
@@ -73,6 +77,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertEquals(['can_view', 'can_edit'], $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_can_revoke_single_permission()
     {
@@ -89,6 +94,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_delete', $revoked);
     }
 
+    /** @test */
     #[Test]
     public function it_can_revoke_multiple_permissions()
     {
@@ -106,6 +112,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_edit', $revoked);
     }
 
+    /** @test */
     #[Test]
     public function it_does_not_duplicate_revoked_permissions()
     {
@@ -122,6 +129,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertEquals(['can_delete'], $revoked);
     }
 
+    /** @test */
     #[Test]
     public function it_stores_permissions_as_json_array()
     {
@@ -146,6 +154,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertCount(3, $fresh->getAllowedPermissions());
     }
 
+    /** @test */
     #[Test]
     public function it_gets_allowed_permissions_as_array()
     {
@@ -164,6 +173,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_delete', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_gets_revoked_permissions_as_array()
     {
@@ -181,6 +191,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_admin', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_gets_effective_permissions()
     {
@@ -200,6 +211,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertNotContains('can_delete', $effective);
     }
 
+    /** @test */
     #[Test]
     public function it_checks_if_has_permission()
     {
@@ -214,6 +226,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse($user->hasPermission('can_delete'));
     }
 
+    /** @test */
     #[Test]
     public function it_checks_if_has_any_permission()
     {
@@ -227,6 +240,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse($user->hasAnyPermission(['can_delete', 'can_admin']));
     }
 
+    /** @test */
     #[Test]
     public function it_checks_if_has_all_permissions()
     {
@@ -240,6 +254,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse($user->hasAllPermissions(['can_view', 'can_admin']));
     }
 
+    /** @test */
     #[Test]
     public function it_handles_null_permissions_gracefully()
     {
@@ -254,6 +269,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse($user->hasPermission('can_view'));
     }
 
+    /** @test */
     #[Test]
     public function it_handles_empty_array_permissions()
     {
@@ -268,6 +284,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse($user->hasPermission('can_view'));
     }
 
+    /** @test */
     #[Test]
     public function it_filters_empty_values_when_granting_permissions()
     {
@@ -284,6 +301,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_edit', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_nested_permission_arrays()
     {
@@ -300,6 +318,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertContains('can_delete', $permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_invalidates_cache_when_permissions_change()
     {
@@ -328,6 +347,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertFalse(Cache::has($cacheKey));
     }
 
+    /** @test */
     #[Test]
     public function revoke_permission_removes_from_allowed_if_present()
     {
@@ -343,6 +363,7 @@ class HasPermissionsTraitTest extends TestCase
         $this->assertNotContains('can_delete', $effective);
     }
 
+    /** @test */
     #[Test]
     public function grant_permission_removes_from_revoked_if_present()
     {

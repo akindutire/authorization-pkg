@@ -23,6 +23,7 @@ class MiddlewareTest extends TestCase
         $this->middleware = new ValidateSubjectAction();
     }
 
+    /** @test */
     #[Test]
     public function it_allows_request_when_user_has_required_permission()
     {
@@ -48,6 +49,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_denies_request_when_user_lacks_required_permission()
     {
@@ -74,6 +76,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
+    /** @test */
     #[Test]
     public function it_allows_request_when_user_has_all_required_permissions()
     {
@@ -99,6 +102,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_denies_request_when_user_missing_one_required_permission()
     {
@@ -124,6 +128,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
+    /** @test */
     #[Test]
     public function it_respects_revoked_permissions()
     {
@@ -150,6 +155,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
+    /** @test */
     #[Test]
     public function it_allows_unprotected_routes()
     {
@@ -169,6 +175,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_works_with_different_models()
     {
@@ -194,6 +201,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_denies_when_subject_not_found()
     {
@@ -213,6 +221,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
+    /** @test */
     #[Test]
     public function it_handles_closure_routes_gracefully()
     {
@@ -229,6 +238,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_throws_exception_when_subject_value_is_null()
     {
@@ -250,6 +260,7 @@ class MiddlewareTest extends TestCase
         });
     }
 
+    /** @test */
     #[Test]
     public function it_extracts_value_from_route_parameters()
     {
@@ -276,6 +287,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_extracts_value_from_query_parameters()
     {
@@ -301,6 +313,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals(200, $response->getStatusCode());
     }
 
+    /** @test */
     #[Test]
     public function it_caches_reflection_metadata()
     {
@@ -339,6 +352,7 @@ class MiddlewareTest extends TestCase
         $this->assertArrayHasKey('subject_value_key', $cachedMetadata);
     }
 
+    /** @test */
     #[Test]
     public function it_uses_auto_invalidation_hash_in_cache_key()
     {
@@ -350,6 +364,7 @@ class MiddlewareTest extends TestCase
         $this->assertMatchesRegularExpression('/\.[a-f0-9]{8}$/', $cacheKey);
     }
 
+    /** @test */
     #[Test]
     public function it_generates_consistent_cache_keys_for_same_controller_method()
     {
@@ -359,6 +374,7 @@ class MiddlewareTest extends TestCase
         $this->assertEquals($key1, $key2);
     }
 
+    /** @test */
     #[Test]
     public function it_generates_different_cache_keys_for_different_methods()
     {
@@ -368,6 +384,7 @@ class MiddlewareTest extends TestCase
         $this->assertNotEquals($key1, $key2);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_json_array_permissions_correctly()
     {

@@ -17,6 +17,7 @@ class PermissionSvcTest extends TestCase
         $this->service = new PermissionSvc();
     }
 
+    /** @test */
     #[Test]
     public function it_can_set_subject()
     {
@@ -27,6 +28,7 @@ class PermissionSvcTest extends TestCase
         $this->assertInstanceOf(PermissionSvc::class, $result);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_true_when_subject_has_any_permission()
     {
@@ -37,6 +39,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_false_when_subject_has_none_of_permissions()
     {
@@ -47,6 +50,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_true_when_subject_has_all_permissions()
     {
@@ -57,6 +61,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_false_when_subject_missing_one_permission()
     {
@@ -67,6 +72,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
+    /** @test */
     #[Test]
     public function it_excludes_revoked_permissions_from_check()
     {
@@ -79,6 +85,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($hasView);
     }
 
+    /** @test */
     #[Test]
     public function it_throws_exception_when_checking_permissions_without_subject()
     {
@@ -88,6 +95,7 @@ class PermissionSvcTest extends TestCase
         $this->service->hasAny(['can_view']);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_false_for_empty_permission_array()
     {
@@ -98,6 +106,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_flattened_nested_permission_arrays()
     {
@@ -111,6 +120,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
+    /** @test */
     #[Test]
     public function it_gets_abilities_for_role()
     {
@@ -133,6 +143,7 @@ class PermissionSvcTest extends TestCase
         $this->assertNotContains('can_delete', $adminPermissions);
     }
 
+    /** @test */
     #[Test]
     public function it_returns_empty_array_for_unknown_role()
     {
@@ -146,6 +157,7 @@ class PermissionSvcTest extends TestCase
         $this->assertEmpty($permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_simple_abilities_array()
     {
@@ -161,6 +173,7 @@ class PermissionSvcTest extends TestCase
         $this->assertIsArray($permissions);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_null_permissions_gracefully()
     {
@@ -171,6 +184,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_empty_string_permissions()
     {
@@ -181,6 +195,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($result);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_json_string_permissions()
     {
@@ -196,6 +211,7 @@ class PermissionSvcTest extends TestCase
         $this->assertFalse($hasDelete); // Revoked
     }
 
+    /** @test */
     #[Test]
     public function it_clears_memoization_when_subject_changes()
     {
@@ -211,6 +227,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($this->service->subject($subject2)->hasAny(['can_edit']));
     }
 
+    /** @test */
     #[Test]
     public function it_memoizes_permission_resolution_for_same_subject()
     {
@@ -226,6 +243,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result2);
     }
 
+    /** @test */
     #[Test]
     public function it_handles_whitespace_in_permissions()
     {
@@ -236,6 +254,7 @@ class PermissionSvcTest extends TestCase
         $this->assertTrue($result);
     }
 
+    /** @test */
     #[Test]
     public function it_throws_exception_if_abilities_config_is_not_array()
     {
