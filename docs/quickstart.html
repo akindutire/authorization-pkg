@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quick Start - Akindutire Authorization</title>
+    <meta name="description" content="Get started with model-agnostic authorization in 5 minutes">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -16,9 +17,10 @@
                 <li><a href="index.html">Home</a></li>
                 <li><a href="installation.html">Installation</a></li>
                 <li><a href="quickstart.html" class="active">Quick Start</a></li>
-                <li><a href="api.html">API Reference</a></li>
+                <li><a href="api.html">API</a></li>
                 <li><a href="configuration.html">Configuration</a></li>
                 <li><a href="best-practices.html">Best Practices</a></li>
+                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -27,166 +29,292 @@
         <div class="doc-container">
             <div class="doc-content">
                 <h1>Quick Start Guide</h1>
-                <p>Learn how to implement authorization in your Laravel application in 5 minutes.</p>
+                <p>Get your first model-agnostic authorization working in 5 minutes. This guide uses <strong>Article</strong> as an example, but works with any Eloquent model.</p>
 
-                <h2>Step 1: Define Model abilities/properties grouped by tags(Optional)</h2>
-                <p>A user, post, campaigns, ..etc </p>
-                <p>Optionally configure ability templates in <code>config/akindutire-authorization.php</code> for reference:</p>
-                <pre><code>'abilities' => [
-    'owner' => ['can_update', 'can_delete', 'can_create', 'can_view'],
-    'admin' => ['can_update', 'can_create', 'can_view'],
-    'member' => ['can_view'],
-    'virality' => ['can_go_viral', 'can_boost']
-],</code></pre>
-                <p><strong>Note:</strong> These are informational templates only. Access them via <code>EntityPermission::getAbilities('tag')</code>. They are not automatically applied.</p>
+                <div class="alert alert-info">
+                    <strong>Key Concept:</strong> Unlike traditional systems where users have permissions, this package lets you attach abilities directly to <strong>any entity</strong> - Articles, Organizations, TeamMembers, etc. The entity itself controls what can be done to it.
+                </div>
 
-                <h2>Step 2: Grant Permissions/traits/properties</h2>
-                <p>Use the <code>HasPermissions</code> trait methods to manage permissions:</p>
-                <pre><code>// Grant permissions to a user
-$user->grantPermission(['can_view', 'can_edit']);
+                <h2>Step 1: Install the Package</h2>
+                <p>Install via Composer:</p>
+                <pre><code>composer require akindutire/authorization-pkg</code></pre>
 
-// Grant a single permission
-$user->grantPermission('can_delete');
+                <p>The package auto-registers via Laravel's package discovery.</p>
 
-// Revoke permissions (overrides allowed permissions)
-$user->revokePermission(['can_delete']);</code></pre>
+                <h2>Step 2: Add Trait to Your Model</h2>
+                <p>Add the <code>HasPermissions</code> trait to <strong>any model</strong> that needs abilities:</p>
 
-                <h2>Step 3: To effectively attach identifier of model (for instace post) to validate, you can attach post id via a middleware or route parameter. 
-                    Protect Routes with ValidateSubjectAction Middleware</h2>
-                <p>Add the <code>current.subject.action</code> middleware to your routes:</p>
-                <p>Add the <code>validate.subject.action</code> middleware to your routes:</p>
-                <pre><code>use Akindutire\Authorization\Middleware\ValidateSubjectAction;
+                <pre><code>use Akindutire\Authorization\Traits\HasPermissions;
+use Illuminate\Database\Eloquent\Model;
 
-Route::middleware([ValidateSubjectAction::class])->group(function () {
-    Route::get('/posts/{id}', [PostController::class, 'show']);
-    Route::put('/posts/{id}', [PostController::class, 'update']);
-    Route::delete('/posts/{id}', [PostController::class, 'destroy']);
-});</code></pre>
-
-                <h2>Step 4: Add Attributes to Controllers</h2>
-                <p>Use PHP 8 attributes to declaratively define authorization requirements:</p>
-                <pre><code>use Akindutire\Authorization\Attributes\{HasAny, HasAll, SubjectValue};
-
-class PostController extends Controller
+class Article extends Model
 {
-    #[HasAny(['can_view'], User::class, 'id')]
-    public function show(#[SubjectValue('user_id')] Request $request, int $id)
-    {
-        $post = Post::findOrFail($id);
-        return view('posts.show', compact('post'));
-    }
+    use HasPermissions;
 
-    #[HasAll(['can_update'], Post::class, 'user_id')]
+    protected $casts = [
+        'allowed_permissions' => 'array',  // Abilities this article has
+        'revoked_permissions' => 'array',  // Explicitly denied abilities
+    ];
+}</code></pre>
+
+                <div class="alert alert-warning">
+                    <strong>Model-Agnostic:</strong> This works with ANY model - Article, TeamMember, Organization, User, Product, etc. Each entity manages its own abilities.
+                </div>
+
+                <h2>Step 3: Create Database Migration</h2>
+                <p>Generate a migration to add ability columns to your table:</p>
+
+                <pre><code># For articles table
+php artisan make:permission-migration articles
+
+# For other models
+php artisan make:permission-migration team_members
+php artisan make:permission-migration organizations</code></pre>
+
+                <p>Run the migration:</p>
+                <pre><code>php artisan migrate</code></pre>
+
+                <p>This adds two JSON columns to your table:</p>
+                <ul>
+                    <li><code>allowed_permissions</code> - Abilities the entity has</li>
+                    <li><code>revoked_permissions</code> - Explicitly denied abilities</li>
+                </ul>
+
+                <h2>Step 4: Grant Abilities to Entities</h2>
+                <p>Attach abilities to your entities (not users!):</p>
+
+                <pre><code>// Grant abilities to an Article
+$article = Article::find(1);
+$article->grantPermission(['can_be_edited', 'can_be_published']);
+
+// Grant abilities to a TeamMember
+$member = TeamMember::find(1);
+$member->grantPermission(['can_invite', 'can_manage_billing']);
+
+// Grant abilities to an Organization
+$org = Organization::find(1);
+$org->grantPermission(['can_use_api', 'can_export_data']);</code></pre>
+
+                <div class="alert alert-info">
+                    <strong>Entity-Centric:</strong> Abilities belong to the entity itself. An article with <code>can_be_edited</code> ability can be edited. A team member with <code>can_invite</code> ability can invite others.
+                </div>
+
+                <h2>Step 5: Protect Controller Methods</h2>
+                <p>Use PHP 8 attributes to check if entities have required abilities:</p>
+
+                <pre><code>use Akindutire\Authorization\Attributes\{HasAny, HasAll, SubjectValue};
+use App\Models\Article;
+
+class ArticleController extends Controller
+{
+    /**
+     * Check if the ARTICLE has the ability to be edited
+     * (NOT checking if a user can edit)
+     */
+    #[HasAny(['can_be_edited'], Article::class, 'id')]
     public function update(
-        Request $request,
-        #[SubjectValue('id')] int $id
+        #[SubjectValue] int $id,
+        Request $request
     ) {
-        $post = Post::findOrFail($id);
-        $post->update($request->validated());
-        return redirect()->route('posts.show', $post);
+        // Only executes if the Article has 'can_be_edited' ability
+        $article = Article::find($id);
+        $article->update($request->validated());
+
+        return response()->json($article);
     }
 
-    #[HasAll(['can_delete'], Post::class, 'user_id')]
-    public function destroy(#[SubjectValue('id')] int $id)
+    /**
+     * Article must have BOTH abilities
+     */
+    #[HasAll(['can_be_published', 'can_be_featured'], Article::class, 'id')]
+    public function publish(#[SubjectValue] int $id)
     {
-        Post::findOrFail($id)->delete();
-        return redirect()->route('posts.index');
+        $article = Article::find($id);
+        $article->update(['published_at' => now()]);
+
+        return response()->json($article);
+    }
+
+    /**
+     * Works with any property, not just 'id'
+     */
+    #[HasAny(['can_be_viewed'], Article::class, 'slug')]
+    public function show(#[SubjectValue] string $slug)
+    {
+        return Article::where('slug', $slug)->firstOrFail();
     }
 }</code></pre>
 
                 <h3>Understanding the Attributes</h3>
                 <ul>
-                    <li><code>#[HasAny(['can_view'])]</code> - User needs at least ONE of the listed permissions</li>
-                    <li><code>#[HasAll(['can_update', 'can_delete'])]</code> - User needs ALL listed permissions</li>
-                    <li><code>Post::class</code> - The Eloquent model to check permissions against</li>
-                    <li><code>'user_id'</code> - The column name that links the resource to the user</li>
-                    <li><code>#[SubjectValue('id')]</code> - The route parameter containing the resource ID</li>
+                    <li><strong><code>#[HasAny(['can_be_edited'])]</code></strong> - Entity needs at least ONE of the listed abilities</li>
+                    <li><strong><code>#[HasAll(['can_be_published', 'can_be_featured'])]</code></strong> - Entity needs ALL listed abilities</li>
+                    <li><strong><code>Article::class</code></strong> - The model class to check (Article, TeamMember, Organization, etc.)</li>
+                    <li><strong><code>'id'</code></strong> - The property to lookup the entity by (can be 'id', 'uuid', 'slug', etc.)</li>
+                    <li><strong><code>#[SubjectValue]</code></strong> - Marks the parameter containing the lookup value</li>
                 </ul>
 
-                <h2>Step 5: Check Permissions Programmatically</h2>
-                <p>For complex authorization logic, use the facade or model methods:</p>
-                <pre><code>use Akindutire\Authorization\Facades\EntityPermission;
+                <h2>Step 6: Register Middleware</h2>
+                <p>Add the validation middleware to your routes:</p>
 
-// Check if user has permission
-if ($user->hasPermission('can_edit')) {
-    // Allow editing
+                <pre><code>// app/Http/Kernel.php
+protected $middlewareAliases = [
+    // ... other middleware
+    'validate.subject.action' => \Akindutire\Authorization\Middleware\ValidateSubjectAction::class,
+];
+
+// routes/web.php or routes/api.php
+Route::middleware(['validate.subject.action'])->group(function () {
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::post('/articles/{id}/publish', [ArticleController::class, 'publish']);
+    Route::get('/articles/{slug}', [ArticleController::class, 'show']);
+});</code></pre>
+
+                <h2>Step 7: Check Abilities Programmatically</h2>
+                <p>For complex logic, use model methods or the facade:</p>
+
+                <pre><code>// Using model methods
+$article = Article::find(1);
+
+if ($article->hasPermission('can_be_edited')) {
+    // Article can be edited
 }
 
-// Check multiple permissions (requires ALL)
-if ($user->hasAllPermissions(['can_update', 'can_delete'])) {
-    // Allow destructive actions
+if ($article->hasAllPermissions(['can_be_published', 'can_be_featured'])) {
+    // Article can be published and featured
 }
 
-// Check using the facade
-$post = Post::find($id);
-$canEdit = EntityPermission::subject($post)
-    ->hasAny(['can_update']);
+if ($article->hasAnyPermission(['can_be_edited', 'can_be_viewed'])) {
+    // Article has at least one of these abilities
+}
 
-if ($canEdit) {
-    // Allow editing this specific post
-}</code></pre>
+// Using the facade
+use Akindutire\Authorization\Facades\EntityPermission;
 
-                <h2>Step 6: Handle Unauthorized Access</h2>
-                <p>The middleware automatically returns a 403 response for unauthorized users. Customize the response in your exception handler:</p>
-                <pre><code>// app/Exceptions/Handler.php
-public function render($request, Throwable $exception)
-{
-    if ($exception instanceof AuthorizationException) {
-        return response()->json([
-            'message' => 'You do not have permission to perform this action.'
-        ], 403);
-    }
+$canEdit = EntityPermission::subject($article)->hasAny(['can_be_edited']);
+$canPublish = EntityPermission::subject($article)->hasAll(['can_be_published']);</code></pre>
 
-    return parent::render($request, $exception);
-}</code></pre>
+                <h2>Complete Working Example</h2>
+                <p>Here's a complete flow showing how abilities work with Articles:</p>
 
-                <h2>Complete Example: Blog System</h2>
-                <pre><code>// 1. Grant permissions to user
-$user->grantPermission(['can_create', 'can_update', 'can_delete', 'can_view']);
+                <pre><code>// 1. Create an article
+$article = Article::create([
+    'title' => 'My First Article',
+    'slug' => 'my-first-article',
+    'content' => 'Article content...',
+]);
 
-// 2. Protect routes
-Route::middleware([ValidateSubjectAction::class])->group(function () {
-    Route::resource('posts', PostController::class);
+// 2. Grant abilities to the article
+$article->grantPermission(['can_be_edited', 'can_be_published']);
+
+// 3. Protect your routes
+Route::middleware(['validate.subject.action'])->group(function () {
+    Route::put('/articles/{id}', [ArticleController::class, 'update']);
+    Route::post('/articles/{id}/publish', [ArticleController::class, 'publish']);
+    Route::get('/articles/{slug}', [ArticleController::class, 'show']);
 });
 
-// 3. Add attributes to controller
-class PostController extends Controller
+// 4. Add attributes to controller methods
+class ArticleController extends Controller
 {
-    #[HasAll(['can_create'])]
-    public function store(Request $request)
+    // This checks if the ARTICLE has 'can_be_edited' ability
+    #[HasAny(['can_be_edited'], Article::class, 'id')]
+    public function update(#[SubjectValue] int $id, Request $request)
     {
-        $post = auth()->user()->posts()->create($request->validated());
-        return redirect()->route('posts.show', $post);
+        $article = Article::find($id);
+        $article->update($request->validated());
+        return response()->json($article);
     }
 
-    #[HasAny(['can_view'], Post::class, 'user_id')]
-    public function show(#[SubjectValue('id')] int $id)
+    // This checks if the ARTICLE has both abilities
+    #[HasAll(['can_be_published'], Article::class, 'id')]
+    public function publish(#[SubjectValue] int $id)
     {
-        $post = Post::with('user')->findOrFail($id);
-        return view('posts.show', compact('post'));
+        $article = Article::find($id);
+        $article->update(['published_at' => now()]);
+        return response()->json($article);
     }
 
-    #[HasAll(['can_update'], Post::class, 'user_id')]
-    public function update(
-        Request $request,
-        #[SubjectValue('id')] int $id
-    ) {
-        $post = Post::findOrFail($id);
-        $post->update($request->validated());
-        return redirect()->route('posts.show', $post);
+    // This checks by slug instead of id
+    #[HasAny(['can_be_viewed'], Article::class, 'slug')]
+    public function show(#[SubjectValue] string $slug)
+    {
+        return Article::where('slug', $slug)->firstOrFail();
     }
+}
+
+// 5. Make requests
+// ✅ PUT /articles/1 - Works (article has 'can_be_edited')
+// ✅ POST /articles/1/publish - Works (article has 'can_be_published')
+// ✅ GET /articles/my-first-article - Works if granted 'can_be_viewed'
+
+// 6. Revoke an ability
+$article->revokePermission(['can_be_edited']);
+
+// ❌ PUT /articles/1 - Now returns 403 (article no longer has 'can_be_edited')</code></pre>
+
+                <h2>Works with Any Model</h2>
+                <p>The same approach works with any Eloquent model:</p>
+
+                <pre><code>// TeamMember abilities
+$member = TeamMember::find(1);
+$member->grantPermission(['can_invite', 'can_manage_billing']);
+
+#[HasAny(['can_invite'], TeamMember::class, 'id')]
+public function invite(#[SubjectValue] int $id) {
+    // Only executes if TeamMember has 'can_invite' ability
+}
+
+// Organization abilities
+$org = Organization::find(1);
+$org->grantPermission(['can_use_api', 'can_export_data']);
+
+#[HasAll(['can_use_api'], Organization::class, 'org_id')]
+public function apiAccess(#[SubjectValue] int $org_id) {
+    // Only executes if Organization has 'can_use_api' ability
 }</code></pre>
 
+                <h2>Optional: Define Ability Templates</h2>
+                <p>For reusable ability sets, define templates in <code>config/akindutire-authorization.php</code>:</p>
+
+                <pre><code>return [
+    'abilities' => [
+        'article_editor' => ['can_be_edited', 'can_be_deleted'],
+        'article_publisher' => ['can_be_edited', 'can_be_published', 'can_be_featured'],
+        'team_admin' => ['can_invite', 'can_remove', 'can_manage_billing'],
+        'org_premium' => ['can_use_api', 'can_export_data', 'can_white_label'],
+    ],
+];</code></pre>
+
+                <p>Then use them:</p>
+                <pre><code>use Akindutire\Authorization\Facades\EntityPermission;
+
+// Grant template abilities
+$article->grantPermission(EntityPermission::getAbilities('article_publisher'));
+$member->grantPermission(EntityPermission::getAbilities('team_admin'));
+$org->grantPermission(EntityPermission::getAbilities('org_premium'));</code></pre>
+
                 <div class="alert alert-success">
-                    <strong>That's it!</strong> You now have a fully functional authorization system. The middleware automatically checks permissions, caches reflection metadata, and handles unauthorized access.
+                    <strong>You're Done!</strong> You now have a fully functional model-agnostic authorization system. Abilities belong to entities, validation is automatic, and caching is handled for you.
                 </div>
 
                 <h2>Next Steps</h2>
                 <ul>
-                    <li><a href="api.html">Explore the complete API Reference</a></li>
-                    <li><a href="configuration.html">Customize configuration options</a></li>
-                    <li><a href="best-practices.html">Learn best practices</a> for production usage</li>
+                    <li><a href="api.html"><strong>API Reference</strong></a> - Explore all available methods and attributes</li>
+                    <li><a href="configuration.html"><strong>Configuration</strong></a> - Customize ability templates and caching</li>
+                    <li><a href="best-practices.html"><strong>Best Practices</strong></a> - Production-ready patterns and optimization tips</li>
                 </ul>
+
+                <h2>Key Takeaways</h2>
+                <div class="alert alert-info">
+                    <ul style="margin: 0; padding-left: 1.5rem;">
+                        <li>Abilities belong to <strong>entities</strong> (Article, TeamMember, Organization), not users</li>
+                        <li><code>#[HasAny]</code> and <code>#[HasAll]</code> attributes check if the <strong>entity</strong> has abilities</li>
+                        <li>Works with any Eloquent model by adding the <code>HasPermissions</code> trait</li>
+                        <li>Lookup entities by any property: <code>id</code>, <code>uuid</code>, <code>slug</code>, <code>email</code>, etc.</li>
+                        <li>Automatic caching with auto-invalidation - no manual cache clearing needed</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -200,25 +328,26 @@ class PostController extends Controller
                         <li><a href="installation.html">Installation</a></li>
                         <li><a href="quickstart.html">Quick Start</a></li>
                         <li><a href="api.html">API Reference</a></li>
+                        <li><a href="configuration.html">Configuration</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul>
-                        <li><a href="configuration.html">Configuration</a></li>
                         <li><a href="best-practices.html">Best Practices</a></li>
+                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
+                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>Links</h4>
-                    <ul>
-                        <li><a href="https://github.com/akindutire/authorization" target="_blank">GitHub</a></li>
-                        <li><a href="https://packagist.org/packages/akindutire/authorization" target="_blank">Packagist</a></li>
-                    </ul>
+                    <h4>About</h4>
+                    <p>Created by Akindutire Ayomide</p>
+                    <p>MIT Licensed</p>
+                    <p>Version 2.0.0</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Akindutire Authorization. Built with Laravel.</p>
+                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
             </div>
         </div>
     </footer>
