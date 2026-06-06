@@ -480,32 +480,207 @@ body {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 1.5rem;
+    }
+
+    .doc-container {
+        padding: 0 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+
+    .doc-container {
+        padding: 0 1rem;
+    }
+
+    /* Mobile Navigation */
+    .navbar .container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .nav-links {
-        display: none;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #334155;
+    }
+
+    .nav-links li {
+        width: 100%;
+    }
+
+    .nav-links a {
+        display: block;
+        padding: 0.5rem 0;
+    }
+
+    /* Hero Section */
+    .hero {
+        padding: 3rem 0;
     }
 
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
+        line-height: 1.2;
     }
 
     .hero-subtitle {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
     }
 
     .hero-buttons {
         flex-direction: column;
+        width: 100%;
     }
 
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .code-preview {
+        font-size: 0.875rem;
+    }
+
+    /* Features & Stats */
     .features-grid {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
 
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
     }
 
+    .stat-number {
+        font-size: 2rem;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+    }
+
+    /* Documentation Pages */
+    .doc-content h1 {
+        font-size: 2rem;
+    }
+
+    .doc-content h2 {
+        font-size: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .doc-content h3 {
+        font-size: 1.25rem;
+    }
+
+    .doc-content pre {
+        padding: 1rem;
+        margin: 1rem 0;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .doc-content pre code {
+        font-size: 0.85rem;
+    }
+
+    /* Tables - make scrollable on mobile */
+    .doc-content table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 1rem 0;
+    }
+
+    .doc-content th,
+    .doc-content td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 0.75rem;
+        margin: 1rem 0;
+        font-size: 0.9rem;
+    }
+
+    /* Example Tabs */
+    .example-tabs {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .tab-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        flex: 1 1 auto;
+    }
+
+    /* Footer */
     .footer-content {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .footer-section {
+        text-align: center;
+    }
+
+    .footer-bottom {
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 1.75rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .doc-content h1 {
+        font-size: 1.75rem;
+    }
+
+    .doc-content h2 {
+        font-size: 1.35rem;
+    }
+
+    .doc-content h3 {
+        font-size: 1.15rem;
+    }
+
+    .doc-content pre {
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .doc-content pre code {
+        font-size: 0.8rem;
     }
 }
