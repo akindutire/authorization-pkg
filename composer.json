@@ -6,8 +6,8 @@
     "keywords": [
         "laravel",
         "authorization",
-        "permissions",
-        "roles",
+        "permissions/abilities",
+        "roles/tags",
         "php8",
         "attributes",
         "eloquent"
