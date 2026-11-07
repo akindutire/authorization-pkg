@@ -5,54 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installation - Akindutire Authorization</title>
     <meta name="description" content="Complete installation guide for Laravel Model-Agnostic Authorization package">
+    <script>try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1><a href="#home" style="text-decoration:none;" class="active">Akindutire Authorization</a></h1>
-            </div>
-            <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                ☰
-            </button>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="installation.html" class="active">Installation</a></li>
-                <li><a href="quickstart.html">Quick Start</a></li>
-                <li><a href="api.html">API</a></li>
-                <li><a href="configuration.html">Configuration</a></li>
-                <li><a href="best-practices.html">Best Practices</a></li>
-                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <div class="doc-page">
-        <div class="doc-container">
-            <div class="doc-content">
-                <h1>Installation Guide</h1>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+        <button class="icon-btn menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--brand)"/><path d="M10 16.5l4 4 8-9" fill="none" stroke="var(--paper)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brand-name">Authorization<small>for Laravel</small></span></a>
+        <div class="topbar-spacer"></div>
+        <nav class="topbar-links" aria-label="Primary">
+            <a href="quickstart.html">Guide</a>
+            <a href="api.html">API</a>
+        </nav>
+        <button class="search-trigger" type="button" data-search-open aria-label="Search documentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button>
+        <button class="icon-btn theme-btn" type="button" aria-label="Toggle colour theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <a class="icon-btn" href="https://github.com/akindutire/authorization-pkg" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
+    </header>
+    <div class="docs">
+        <aside class="sidebar" id="sidebar" aria-label="Documentation">
+<div class="nav-group"><p class="nav-group-title">Get started</p><ul class="nav-list">
+<li><a href="index.html">Overview</a>
+</li>
+<li><a href="installation.html" aria-current="page">Installation</a>
+<ul class="nav-sub">
+<li><a href="#requirements">Requirements</a></li>
+<li><a href="#step-1-install-via-composer">Step 1: Install via Composer</a></li>
+<li><a href="#step-2-publish-configuration">Step 2: Publish Configuration</a></li>
+<li><a href="#step-3-database-setup">Step 3: Database Setup</a></li>
+<li><a href="#step-4-configure-your-models">Step 4: Configure Your Models</a></li>
+<li><a href="#step-5-register-middleware">Step 5: Register Middleware</a></li>
+<li><a href="#step-6-configure-production-caching-optional">Step 6: Configure Production Caching (Optional)</a></li>
+<li><a href="#step-7-update-configuration">Step 7: Update Configuration</a></li>
+<li><a href="#verify-installation">Verify Installation</a></li>
+<li><a href="#common-installation-issues">Common Installation Issues</a></li>
+<li><a href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li><a href="quickstart.html">Quick start</a>
+</li>
+</ul></div>
+<div class="nav-group"><p class="nav-group-title">Reference</p><ul class="nav-list">
+<li><a href="api.html">API reference</a>
+</li>
+<li><a href="configuration.html">Configuration</a>
+</li>
+</ul></div>
+<div class="nav-group"><p class="nav-group-title">Guides</p><ul class="nav-list">
+<li><a href="best-practices.html">Best practices</a>
+</li>
+</ul></div>
+<div class="sidebar-meta"><p>Version 2.0.0 · MIT licence</p><p>PHP 8.1+ · Laravel 9+</p></div>
+</aside>
+        <main class="content" id="main">
+            <div class="breadcrumb"><a href="index.html">Docs</a> / Get started</div>
+            <article class="prose">
+<h1>Installation Guide</h1>
                 <p>Get started with model-agnostic authorization in your Laravel application. This package works with <strong>any</strong> Eloquent model, not just users.</p>
 
                 <div class="alert alert-info">
                     <strong>Model-Agnostic:</strong> Unlike traditional packages, you can attach abilities to Articles, TeamMembers, Organizations, or any entity in your application.
                 </div>
 
-                <h2>Requirements</h2>
+                <h2 id="requirements">Requirements<a class="heading-anchor" href="#requirements" aria-label="Link to this section">#</a></h2>
                 <ul>
                     <li><strong>PHP:</strong> 8.1 or higher</li>
                     <li><strong>Laravel:</strong> 9.0 or higher (supports Laravel 9, 10, 11+)</li>
                     <li><strong>Cache:</strong> Redis or Memcached (recommended for production)</li>
                 </ul>
 
-                <h2>Step 1: Install via Composer</h2>
+                <h2 id="step-1-install-via-composer">Step 1: Install via Composer<a class="heading-anchor" href="#step-1-install-via-composer" aria-label="Link to this section">#</a></h2>
                 <p>Install the package using Composer:</p>
                 <pre><code>composer require akindutire/authorization-pkg</code></pre>
 
                 <p>The package will automatically register via Laravel's package discovery.</p>
 
-                <h2>Step 2: Publish Configuration</h2>
+                <h2 id="step-2-publish-configuration">Step 2: Publish Configuration<a class="heading-anchor" href="#step-2-publish-configuration" aria-label="Link to this section">#</a></h2>
                 <p>Publish the configuration file to customize package settings:</p>
                 <pre><code>php artisan vendor:publish --tag=authorization-config</code></pre>
 
@@ -65,9 +96,9 @@
                     <li>Properties for fast lookups</li>
                 </ul>
 
-                <h2>Step 3: Database Setup</h2>
+                <h2 id="step-3-database-setup">Step 3: Database Setup<a class="heading-anchor" href="#step-3-database-setup" aria-label="Link to this section">#</a></h2>
 
-                <h3>Generate Migrations for Each Entity</h3>
+                <h3 id="generate-migrations-for-each-entity">Generate Migrations for Each Entity<a class="heading-anchor" href="#generate-migrations-for-each-entity" aria-label="Link to this section">#</a></h3>
                 <p>Create migrations for <strong>each table</strong> that will have abilities:</p>
 
                 <pre><code># For articles
@@ -92,14 +123,14 @@ php artisan make:permission-migration users</code></pre>
                     <strong>Important:</strong> Generate a separate migration for each entity table. The command creates a timestamped migration customized for the specified table.
                 </div>
 
-                <h3>Run Migrations</h3>
+                <h3 id="run-migrations">Run Migrations<a class="heading-anchor" href="#run-migrations" aria-label="Link to this section">#</a></h3>
                 <p>Apply all migrations to your database:</p>
                 <pre><code>php artisan migrate</code></pre>
 
-                <h2>Step 4: Configure Your Models</h2>
+                <h2 id="step-4-configure-your-models">Step 4: Configure Your Models<a class="heading-anchor" href="#step-4-configure-your-models" aria-label="Link to this section">#</a></h2>
                 <p>Add the <code>HasPermissions</code> trait to <strong>any model</strong> that needs abilities:</p>
 
-                <h3>Articles</h3>
+                <h3 id="articles">Articles<a class="heading-anchor" href="#articles" aria-label="Link to this section">#</a></h3>
                 <pre><code>use Akindutire\Authorization\Traits\HasPermissions;
 use Illuminate\Database\Eloquent\Model;
 
@@ -113,7 +144,7 @@ class Article extends Model
     ];
 }</code></pre>
 
-                <h3>Team Members</h3>
+                <h3 id="team-members">Team Members<a class="heading-anchor" href="#team-members" aria-label="Link to this section">#</a></h3>
                 <pre><code>class TeamMember extends Model
 {
     use HasPermissions;
@@ -124,7 +155,7 @@ class Article extends Model
     ];
 }</code></pre>
 
-                <h3>Organizations</h3>
+                <h3 id="organizations">Organizations<a class="heading-anchor" href="#organizations" aria-label="Link to this section">#</a></h3>
                 <pre><code>class Organization extends Model
 {
     use HasPermissions;
@@ -139,7 +170,7 @@ class Article extends Model
                     <strong>Optional Casts:</strong> The trait automatically adds these casts if not explicitly defined. Adding them explicitly provides better IDE support.
                 </div>
 
-                <h2>Step 5: Register Middleware</h2>
+                <h2 id="step-5-register-middleware">Step 5: Register Middleware<a class="heading-anchor" href="#step-5-register-middleware" aria-label="Link to this section">#</a></h2>
                 <p>Add the middleware to <code>app/Http/Kernel.php</code>:</p>
 
                 <pre><code>protected $middlewareAliases = [
@@ -153,7 +184,7 @@ class Article extends Model
     Route::post('/teams/{member_id}/invite', [TeamController::class, 'invite']);
 });</code></pre>
 
-                <h2>Step 6: Configure Production Caching (Optional)</h2>
+                <h2 id="step-6-configure-production-caching-optional">Step 6: Configure Production Caching (Optional)<a class="heading-anchor" href="#step-6-configure-production-caching-optional" aria-label="Link to this section">#</a></h2>
                 <p>For production environments, configure Redis and warm the cache:</p>
 
                 <pre><code># .env
@@ -165,7 +196,7 @@ PERMISSION_CACHE_TTL=300</code></pre>
                 <p>Warm cache during deployment:</p>
                 <pre><code>php artisan permission:cache</code></pre>
 
-                <h2>Step 7: Update Configuration</h2>
+                <h2 id="step-7-update-configuration">Step 7: Update Configuration<a class="heading-anchor" href="#step-7-update-configuration" aria-label="Link to this section">#</a></h2>
                 <p>Edit <code>config/akindutire-authorization.php</code> to list all entity tables:</p>
 
                 <pre><code>return [
@@ -195,7 +226,7 @@ PERMISSION_CACHE_TTL=300</code></pre>
     ],
 ];</code></pre>
 
-                <h2>Verify Installation</h2>
+                <h2 id="verify-installation">Verify Installation<a class="heading-anchor" href="#verify-installation" aria-label="Link to this section">#</a></h2>
                 <p>Test that everything works by checking abilities in tinker:</p>
 
                 <pre><code>php artisan tinker
@@ -222,22 +253,22 @@ PERMISSION_CACHE_TTL=300</code></pre>
 >>> Cache::has('entity.App.Models.Article.id.' . $article->id);
 => true  // Cache is working</code></pre>
 
-                <h2>Common Installation Issues</h2>
+                <h2 id="common-installation-issues">Common Installation Issues<a class="heading-anchor" href="#common-installation-issues" aria-label="Link to this section">#</a></h2>
 
-                <h3>Migration Already Exists</h3>
+                <h3 id="migration-already-exists">Migration Already Exists<a class="heading-anchor" href="#migration-already-exists" aria-label="Link to this section">#</a></h3>
                 <p>If you get "migration already exists", delete the old migration and regenerate:</p>
                 <pre><code>rm database/migrations/*_add_permissions_to_articles_table.php
 php artisan make:permission-migration articles</code></pre>
 
-                <h3>Trait Not Found</h3>
+                <h3 id="trait-not-found">Trait Not Found<a class="heading-anchor" href="#trait-not-found" aria-label="Link to this section">#</a></h3>
                 <p>Ensure autoload is updated:</p>
                 <pre><code>composer dump-autoload</code></pre>
 
-                <h3>Cache Not Working</h3>
+                <h3 id="cache-not-working">Cache Not Working<a class="heading-anchor" href="#cache-not-working" aria-label="Link to this section">#</a></h3>
                 <p>Verify Redis is running:</p>
                 <pre><code>redis-cli ping  # Should return PONG</code></pre>
 
-                <h2>Next Steps</h2>
+                <h2 id="next-steps">Next Steps<a class="heading-anchor" href="#next-steps" aria-label="Link to this section">#</a></h2>
                 <ul>
                     <li><a href="quickstart.html"><strong>Quick Start Guide</strong></a> - Implement your first authorization check</li>
                     <li><a href="configuration.html"><strong>Configuration</strong></a> - Customize ability templates and caching</li>
@@ -248,50 +279,25 @@ php artisan make:permission-migration articles</code></pre>
                 <div class="alert alert-success">
                     <strong>Installation Complete!</strong> You can now attach abilities to any Eloquent model and protect controller methods with PHP 8 attributes.
                 </div>
-            </div>
-        </div>
+            </article>
+            <nav class="pager" aria-label="Pages"><a class="prev" href="index.html"><small>Previous</small><strong>Overview</strong></a><a class="next" href="quickstart.html"><small>Next</small><strong>Quick start</strong></a></nav>
+            <footer class="page-foot">
+                <a href="https://github.com/akindutire/authorization-pkg/edit/main/docs/installation.html">Edit this page on GitHub</a>
+                <a href="https://github.com/akindutire/authorization-pkg/issues">Report an issue</a>
+                <a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a>
+            </footer>
+        </main>
+        <nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="lvl-2"><a href="#requirements">Requirements</a></li><li class="lvl-2"><a href="#step-1-install-via-composer">Step 1: Install via Composer</a></li><li class="lvl-2"><a href="#step-2-publish-configuration">Step 2: Publish Configuration</a></li><li class="lvl-2"><a href="#step-3-database-setup">Step 3: Database Setup</a></li><li class="lvl-3"><a href="#generate-migrations-for-each-entity">Generate Migrations for Each Entity</a></li><li class="lvl-3"><a href="#run-migrations">Run Migrations</a></li><li class="lvl-2"><a href="#step-4-configure-your-models">Step 4: Configure Your Models</a></li><li class="lvl-3"><a href="#articles">Articles</a></li><li class="lvl-3"><a href="#team-members">Team Members</a></li><li class="lvl-3"><a href="#organizations">Organizations</a></li><li class="lvl-2"><a href="#step-5-register-middleware">Step 5: Register Middleware</a></li><li class="lvl-2"><a href="#step-6-configure-production-caching-optional">Step 6: Configure Production Caching (Optional)</a></li><li class="lvl-2"><a href="#step-7-update-configuration">Step 7: Update Configuration</a></li><li class="lvl-2"><a href="#verify-installation">Verify Installation</a></li><li class="lvl-2"><a href="#common-installation-issues">Common Installation Issues</a></li><li class="lvl-3"><a href="#migration-already-exists">Migration Already Exists</a></li><li class="lvl-3"><a href="#trait-not-found">Trait Not Found</a></li><li class="lvl-3"><a href="#cache-not-working">Cache Not Working</a></li><li class="lvl-2"><a href="#next-steps">Next Steps</a></li></ol></nav>
     </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="installation.html">Installation</a></li>
-                        <li><a href="quickstart.html">Quick Start</a></li>
-                        <li><a href="api.html">API Reference</a></li>
-                        <li><a href="configuration.html">Configuration</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="best-practices.html">Best Practices</a></li>
-                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
-                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>About</h4>
-                    <p>Created by Akindutire Ayomide</p>
-                    <p>MIT Licensed</p>
-                    <p>Version 2.0.0</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+    <dialog class="search-dialog" aria-label="Search documentation">
+        <div class="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Search methods, commands, config keys…" aria-label="Search" aria-controls="search-results" autocomplete="off" spellcheck="false"></div>
+        <ul class="search-results" id="search-results" role="listbox"></ul>
+        <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></div>
+    </dialog>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
-    <script>hljs.highlightAll();</script>
-    <script>
-        document.querySelector('.mobile-menu-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-    </script>
+    <script src="js/search-index.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
