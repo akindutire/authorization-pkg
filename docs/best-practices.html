@@ -5,43 +5,76 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Best Practices - Akindutire Authorization</title>
     <meta name="description" content="Production-ready best practices for model-agnostic authorization">
+    <script>try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 </head>
 <body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1><a href="#home" style="text-decoration:none;" class="active">Akindutire Authorization</a></h1>
-            </div>
-            <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                ☰
-            </button>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="installation.html">Installation</a></li>
-                <li><a href="quickstart.html">Quick Start</a></li>
-                <li><a href="api.html">API</a></li>
-                <li><a href="configuration.html">Configuration</a></li>
-                <li><a href="best-practices.html" class="active">Best Practices</a></li>
-                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <div class="doc-page">
-        <div class="doc-container">
-            <div class="doc-content">
-                <h1>Best Practices</h1>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+        <button class="icon-btn menu-btn" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--brand)"/><path d="M10 16.5l4 4 8-9" fill="none" stroke="var(--paper)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brand-name">Authorization<small>for Laravel</small></span></a>
+        <div class="topbar-spacer"></div>
+        <nav class="topbar-links" aria-label="Primary">
+            <a href="quickstart.html">Guide</a>
+            <a href="api.html">API</a>
+        </nav>
+        <button class="search-trigger" type="button" data-search-open aria-label="Search documentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button>
+        <button class="icon-btn theme-btn" type="button" aria-label="Toggle colour theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <a class="icon-btn" href="https://github.com/akindutire/authorization-pkg" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
+    </header>
+    <div class="docs">
+        <aside class="sidebar" id="sidebar" aria-label="Documentation">
+<div class="nav-group"><p class="nav-group-title">Get started</p><ul class="nav-list">
+<li><a href="index.html">Overview</a>
+</li>
+<li><a href="installation.html">Installation</a>
+</li>
+<li><a href="quickstart.html">Quick start</a>
+</li>
+</ul></div>
+<div class="nav-group"><p class="nav-group-title">Reference</p><ul class="nav-list">
+<li><a href="api.html">API reference</a>
+</li>
+<li><a href="configuration.html">Configuration</a>
+</li>
+</ul></div>
+<div class="nav-group"><p class="nav-group-title">Guides</p><ul class="nav-list">
+<li><a href="best-practices.html" aria-current="page">Best practices</a>
+<ul class="nav-sub">
+<li><a href="#1-explicitly-define-casts-for-better-ide-support">1. Explicitly Define $casts for Better IDE Support</a></li>
+<li><a href="#2-use-entity-specific-enums-for-type-safety">2. Use Entity-Specific Enums for Type Safety</a></li>
+<li><a href="#3-configure-indexed-properties">3. Configure Indexed Properties</a></li>
+<li><a href="#4-use-atomic-operations-for-race-condition-safety">4. Use Atomic Operations for Race-Condition Safety</a></li>
+<li><a href="#5-warm-cache-in-production-deployments">5. Warm Cache in Production Deployments</a></li>
+<li><a href="#6-use-redis-for-production-caching">6. Use Redis for Production Caching</a></li>
+<li><a href="#7-configure-all-entity-tables-and-properties">7. Configure All Entity Tables and Properties</a></li>
+<li><a href="#8-enable-auto-invalidation-for-reflection-cache">8. Enable Auto-Invalidation for Reflection Cache</a></li>
+<li><a href="#9-optimize-cache-ttl-based-on-usage-patterns">9. Optimize Cache TTL Based on Usage Patterns</a></li>
+<li><a href="#10-use-ability-templates-for-consistency">10. Use Ability Templates for Consistency</a></li>
+<li><a href="#performance-benchmarks">Performance Benchmarks</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul></div>
+<div class="sidebar-meta"><p>Version 2.0.0 · MIT licence</p><p>PHP 8.1+ · Laravel 9+</p></div>
+</aside>
+        <main class="content" id="main">
+            <div class="breadcrumb"><a href="index.html">Docs</a> / Guides</div>
+            <article class="prose">
+<h1>Best Practices</h1>
                 <p>Follow these guidelines for optimal performance, security, and maintainability in production.</p>
 
                 <div class="alert alert-info">
                     <strong>Model-Agnostic:</strong> All best practices apply to any Eloquent model (Article, TeamMember, Organization, etc.). Build scalable authorization for all your entities.
                 </div>
 
-                <h2>1. Explicitly Define $casts for Better IDE Support</h2>
+                <h2 id="1-explicitly-define-casts-for-better-ide-support">1. Explicitly Define $casts for Better IDE Support<a class="heading-anchor" href="#1-explicitly-define-casts-for-better-ide-support" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Recommended):</h3>
+                <h3 id="do-recommended" class="verdict verdict-do">Do (Recommended)<a class="heading-anchor" href="#do-recommended" aria-label="Link to this section">#</a></h3>
                 <pre><code>use Akindutire\Authorization\Traits\HasPermissions;
 
 class Article extends Model
@@ -75,7 +108,7 @@ class Organization extends Model
     ];
 }</code></pre>
 
-                <h3>⚠️ Acceptable (but less ideal):</h3>
+                <h3 id="acceptable-but-less-ideal" class="verdict verdict-caution">Acceptable (but less ideal)<a class="heading-anchor" href="#acceptable-but-less-ideal" aria-label="Link to this section">#</a></h3>
                 <pre><code>class Article extends Model
 {
     use HasPermissions;
@@ -86,9 +119,9 @@ class Organization extends Model
                     The trait automatically adds these casts if not defined. Explicit definition is recommended for better IDE support and code clarity.
                 </div>
 
-                <h2>2. Use Entity-Specific Enums for Type Safety</h2>
+                <h2 id="2-use-entity-specific-enums-for-type-safety">2. Use Entity-Specific Enums for Type Safety<a class="heading-anchor" href="#2-use-entity-specific-enums-for-type-safety" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Best for large applications):</h3>
+                <h3 id="do-best-for-large-applications" class="verdict verdict-do">Do (Best for large applications)<a class="heading-anchor" href="#do-best-for-large-applications" aria-label="Link to this section">#</a></h3>
                 <pre><code>// Define entity-specific ability enums
 enum ArticleAbilities: string {
     case CAN_BE_EDITED = 'can_be_edited';
@@ -128,14 +161,14 @@ public function apiAccess(#[SubjectValue] int $org_id) { }</code></pre>
                     <li>Clear separation between different entity abilities</li>
                 </ul>
 
-                <h3>✅ Also acceptable (for smaller applications):</h3>
+                <h3 id="also-acceptable-for-smaller-applications" class="verdict verdict-do">Also acceptable (for smaller applications)<a class="heading-anchor" href="#also-acceptable-for-smaller-applications" aria-label="Link to this section">#</a></h3>
                 <pre><code>#[HasAny(['can_be_edited'], Article::class, 'id')]
 #[HasAny(['can_invite'], TeamMember::class, 'id')]
 #[HasAll(['can_use_api'], Organization::class, 'org_id')]</code></pre>
 
-                <h2>3. Configure Indexed Properties</h2>
+                <h2 id="3-configure-indexed-properties">3. Configure Indexed Properties<a class="heading-anchor" href="#3-configure-indexed-properties" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do:</h3>
+                <h3 id="do" class="verdict verdict-do">Do<a class="heading-anchor" href="#do" aria-label="Link to this section">#</a></h3>
                 <pre><code>// config/akindutire-authorization.php
 'indexed_properties' => ['uuid', 'slug', 'tenant_id'],
 
@@ -144,7 +177,7 @@ public function apiAccess(#[SubjectValue] int $org_id) { }</code></pre>
 #[HasAny(['can_invite'], TeamMember::class, 'uuid')]
 #[HasAny(['can_use_api'], Organization::class, 'tenant_id')]</code></pre>
 
-                <h3>❌ Don't:</h3>
+                <h3 id="don-t" class="verdict verdict-dont">Don't<a class="heading-anchor" href="#don-t" aria-label="Link to this section">#</a></h3>
                 <pre><code>// Using unindexed property
 #[HasAny(['can_be_edited'], Article::class, 'custom_field')]
 // Without adding 'custom_field' to indexed_properties</code></pre>
@@ -153,9 +186,9 @@ public function apiAccess(#[SubjectValue] int $org_id) { }</code></pre>
                     <strong>Performance Impact:</strong> Unindexed properties result in full table scans. Add all lookup properties to <code>indexed_properties</code> for optimal performance.
                 </div>
 
-                <h2>4. Use Atomic Operations for Race-Condition Safety</h2>
+                <h2 id="4-use-atomic-operations-for-race-condition-safety">4. Use Atomic Operations for Race-Condition Safety<a class="heading-anchor" href="#4-use-atomic-operations-for-race-condition-safety" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Race-condition safe):</h3>
+                <h3 id="do-race-condition-safe" class="verdict verdict-do">Do (Race-condition safe)<a class="heading-anchor" href="#do-race-condition-safe" aria-label="Link to this section">#</a></h3>
                 <pre><code>// Article abilities - atomic operations
 $article = Article::find(1);
 $article->grantPermission('can_be_published');
@@ -169,7 +202,7 @@ $member->grantPermission(['can_invite', 'can_manage_billing']);
 $org = Organization::find(1);
 $org->grantPermission(['can_use_api', 'can_export_data']);</code></pre>
 
-                <h3>❌ Don't (Race condition possible):</h3>
+                <h3 id="don-t-race-condition-possible" class="verdict verdict-dont">Don't (Race condition possible)<a class="heading-anchor" href="#don-t-race-condition-possible" aria-label="Link to this section">#</a></h3>
                 <pre><code>// Manual array manipulation - NOT atomic
 $perms = json_decode($article->allowed_permissions, true);
 $perms[] = 'can_be_published';
@@ -180,9 +213,9 @@ $article->save(); // Race condition possible!</code></pre>
                     <strong>Why it matters:</strong> In high-concurrency scenarios (multiple admins updating abilities simultaneously), atomic operations via <code>grantPermission()</code> prevent lost updates.
                 </div>
 
-                <h2>5. Warm Cache in Production Deployments</h2>
+                <h2 id="5-warm-cache-in-production-deployments">5. Warm Cache in Production Deployments<a class="heading-anchor" href="#5-warm-cache-in-production-deployments" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Best performance):</h3>
+                <h3 id="do-best-performance" class="verdict verdict-do">Do (Best performance)<a class="heading-anchor" href="#do-best-performance" aria-label="Link to this section">#</a></h3>
                 <pre><code>#!/bin/bash
 # deploy.sh
 
@@ -204,7 +237,7 @@ php artisan view:cache
 
 php artisan up</code></pre>
 
-                <h3>✅ Also acceptable (with auto-invalidation enabled - default):</h3>
+                <h3 id="also-acceptable-with-auto-invalidation-enabled-default" class="verdict verdict-do">Also acceptable (with auto-invalidation enabled - default)<a class="heading-anchor" href="#also-acceptable-with-auto-invalidation-enabled-default" aria-label="Link to this section">#</a></h3>
                 <pre><code># deploy.sh
 php artisan migrate
 # Auto-invalidation handles cache updates automatically
@@ -214,9 +247,9 @@ php artisan migrate
                     With auto-invalidation enabled (default), cache warming is optional. It only improves first-request performance by ~50μs.
                 </div>
 
-                <h2>6. Use Redis for Production Caching</h2>
+                <h2 id="6-use-redis-for-production-caching">6. Use Redis for Production Caching<a class="heading-anchor" href="#6-use-redis-for-production-caching" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Required for production):</h3>
+                <h3 id="do-required-for-production" class="verdict verdict-do">Do (Required for production)<a class="heading-anchor" href="#do-required-for-production" aria-label="Link to this section">#</a></h3>
                 <pre><code># .env
 CACHE_DRIVER=redis
 REDIS_HOST=127.0.0.1
@@ -226,7 +259,7 @@ REDIS_DB=0
 
 PERMISSION_CACHE_TTL=300</code></pre>
 
-                <h3>❌ Don't (Not suitable for production):</h3>
+                <h3 id="don-t-not-suitable-for-production" class="verdict verdict-dont">Don't (Not suitable for production)<a class="heading-anchor" href="#don-t-not-suitable-for-production" aria-label="Link to this section">#</a></h3>
                 <pre><code># .env
 CACHE_DRIVER=file  # Slow, no cross-server sharing
 CACHE_DRIVER=array # Lost on every request</code></pre>
@@ -243,9 +276,9 @@ CACHE_DRIVER=array # Lost on every request</code></pre>
                     File cache doesn't work across multiple servers, and array cache doesn't persist between requests.
                 </div>
 
-                <h2>7. Configure All Entity Tables and Properties</h2>
+                <h2 id="7-configure-all-entity-tables-and-properties">7. Configure All Entity Tables and Properties<a class="heading-anchor" href="#7-configure-all-entity-tables-and-properties" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do:</h3>
+                <h3 id="do-2" class="verdict verdict-do">Do<a class="heading-anchor" href="#do-2" aria-label="Link to this section">#</a></h3>
                 <pre><code>// config/akindutire-authorization.php
 return [
     // All tables with HasPermissions trait
@@ -272,7 +305,7 @@ return [
     ],
 ];</code></pre>
 
-                <h3>❌ Don't:</h3>
+                <h3 id="don-t-2" class="verdict verdict-dont">Don't<a class="heading-anchor" href="#don-t-2" aria-label="Link to this section">#</a></h3>
                 <pre><code>// Incomplete configuration
 'indexed_tables' => ['users'], // Missing articles, team_members, organizations
 'indexed_properties' => ['uuid'], // Missing slug, tenant_id used in lookups
@@ -285,9 +318,9 @@ return [
                     <li><code>cache_keys</code>: Ensures multi-key cache invalidation when abilities change</li>
                 </ul>
 
-                <h2>8. Enable Auto-Invalidation for Reflection Cache</h2>
+                <h2 id="8-enable-auto-invalidation-for-reflection-cache">8. Enable Auto-Invalidation for Reflection Cache<a class="heading-anchor" href="#8-enable-auto-invalidation-for-reflection-cache" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do (Default configuration):</h3>
+                <h3 id="do-default-configuration" class="verdict verdict-do">Do (Default configuration)<a class="heading-anchor" href="#do-default-configuration" aria-label="Link to this section">#</a></h3>
                 <pre><code>// config/akindutire-authorization.php
 'auto_invalidate_reflection_cache' => true,</code></pre>
 
@@ -299,32 +332,32 @@ return [
                     <li>Production-safe with warmed caches</li>
                 </ul>
 
-                <h3>❌ Don't (Legacy behavior):</h3>
+                <h3 id="don-t-legacy-behavior" class="verdict verdict-dont">Don't (Legacy behavior)<a class="heading-anchor" href="#don-t-legacy-behavior" aria-label="Link to this section">#</a></h3>
                 <pre><code>// config/akindutire-authorization.php
 'auto_invalidate_reflection_cache' => false, // Requires manual cache clearing</code></pre>
 
-                <h2>9. Optimize Cache TTL Based on Usage Patterns</h2>
+                <h2 id="9-optimize-cache-ttl-based-on-usage-patterns">9. Optimize Cache TTL Based on Usage Patterns<a class="heading-anchor" href="#9-optimize-cache-ttl-based-on-usage-patterns" aria-label="Link to this section">#</a></h2>
 
-                <h3>High-Traffic, Read-Heavy Applications:</h3>
+                <h3 id="high-traffic-read-heavy-applications">High-Traffic, Read-Heavy Applications:<a class="heading-anchor" href="#high-traffic-read-heavy-applications" aria-label="Link to this section">#</a></h3>
                 <pre><code># .env
 PERMISSION_CACHE_TTL=3600  # 1 hour - maximize cache hits</code></pre>
 
                 <p><strong>Expected results:</strong> 99%+ cache hit rate, &lt;1ms authorization checks</p>
 
-                <h3>Applications with Frequent Ability Changes:</h3>
+                <h3 id="applications-with-frequent-ability-changes">Applications with Frequent Ability Changes:<a class="heading-anchor" href="#applications-with-frequent-ability-changes" aria-label="Link to this section">#</a></h3>
                 <pre><code># .env
 PERMISSION_CACHE_TTL=60  # 1 minute - balance freshness and performance</code></pre>
 
                 <p><strong>Expected results:</strong> 95%+ cache hit rate, ~2-3ms authorization checks</p>
 
-                <h3>Development Environment:</h3>
+                <h3 id="development-environment">Development Environment:<a class="heading-anchor" href="#development-environment" aria-label="Link to this section">#</a></h3>
                 <pre><code># .env
 CACHE_DRIVER=array
 PERMISSION_CACHE_TTL=0  # No caching - always fresh data</code></pre>
 
-                <h2>10. Use Ability Templates for Consistency</h2>
+                <h2 id="10-use-ability-templates-for-consistency">10. Use Ability Templates for Consistency<a class="heading-anchor" href="#10-use-ability-templates-for-consistency" aria-label="Link to this section">#</a></h2>
 
-                <h3>✅ Do:</h3>
+                <h3 id="do-3" class="verdict verdict-do">Do<a class="heading-anchor" href="#do-3" aria-label="Link to this section">#</a></h3>
                 <pre><code>// config/akindutire-authorization.php
 'abilities' => [
     // Article templates
@@ -355,11 +388,11 @@ $org->grantPermission(EntityPermission::getAbilities('org_enterprise'));</code><
                     <li>Self-documenting authorization structure</li>
                 </ul>
 
-                <h2>Performance Benchmarks</h2>
+                <h2 id="performance-benchmarks">Performance Benchmarks<a class="heading-anchor" href="#performance-benchmarks" aria-label="Link to this section">#</a></h2>
 
                 <p>Test environment: 50M entities (articles, team members, organizations), 10k req/sec</p>
 
-                <table>
+                <div class="table-wrap"><table>
                     <thead>
                         <tr>
                             <th>Metric</th>
@@ -400,11 +433,11 @@ $org->grantPermission(EntityPermission::getAbilities('org_enterprise'));</code><
                             <td><strong>Negligible</strong></td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
 
-                <h2>Troubleshooting</h2>
+                <h2 id="troubleshooting">Troubleshooting<a class="heading-anchor" href="#troubleshooting" aria-label="Link to this section">#</a></h2>
 
-                <h3>Cache Not Working</h3>
+                <h3 id="cache-not-working">Cache Not Working<a class="heading-anchor" href="#cache-not-working" aria-label="Link to this section">#</a></h3>
                 <p><strong>Symptoms:</strong> Ability changes not reflecting immediately, or slow ability checks</p>
 
                 <p><strong>Solutions:</strong></p>
@@ -428,7 +461,7 @@ protected $casts = [
 # 5. Check cache keys in config
 # Ensure 'cache_keys' includes all lookup properties</code></pre>
 
-                <h3>Subject Value Not Found</h3>
+                <h3 id="subject-value-not-found">Subject Value Not Found<a class="heading-anchor" href="#subject-value-not-found" aria-label="Link to this section">#</a></h3>
                 <p><strong>Error:</strong> "Subject value not found, ensure to set the subject value on the parameter using the SubjectValue attribute"</p>
 
                 <p><strong>Cause:</strong> The specified key doesn't exist in the request</p>
@@ -446,7 +479,7 @@ Route::put('/articles/{article_id}', ...);  // Must match SubjectValue key
 // 4. Debug the request
 dd($request->all());  // See what's actually in the request</code></pre>
 
-                <h3>Slow Ability Checks (&gt;100ms)</h3>
+                <h3 id="slow-ability-checks-100ms">Slow Ability Checks (&gt;100ms)<a class="heading-anchor" href="#slow-ability-checks-100ms" aria-label="Link to this section">#</a></h3>
                 <p><strong>Diagnosis:</strong></p>
                 <pre><code>// Enable query log to count database queries
 DB::enableQueryLog();
@@ -476,7 +509,7 @@ php artisan permission:cache
 # 5. Check indexed_tables configuration
 # Ensure all entity tables are listed in indexed_tables</code></pre>
 
-                <h3>Abilities Not Persisting</h3>
+                <h3 id="abilities-not-persisting">Abilities Not Persisting<a class="heading-anchor" href="#abilities-not-persisting" aria-label="Link to this section">#</a></h3>
                 <p><strong>Symptoms:</strong> <code>grantPermission()</code> doesn't save abilities</p>
 
                 <p><strong>Solutions:</strong></p>
@@ -502,56 +535,31 @@ dd($article->fresh()->allowed_permissions);  // Should show the ability</code></
                     <strong>Production Ready:</strong> Following these best practices ensures your authorization layer adds &lt;1ms overhead per request even under heavy load with millions of entities.
                 </div>
 
-                <h2>Next Steps</h2>
+                <h2 id="next-steps">Next Steps<a class="heading-anchor" href="#next-steps" aria-label="Link to this section">#</a></h2>
                 <ul>
                     <li><a href="configuration.html"><strong>Configuration</strong></a> - Detailed configuration options</li>
                     <li><a href="api.html"><strong>API Reference</strong></a> - Complete API documentation</li>
                     <li><a href="quickstart.html"><strong>Quick Start</strong></a> - Get started in 5 minutes</li>
                 </ul>
-            </div>
-        </div>
+            </article>
+            <nav class="pager" aria-label="Pages"><a class="prev" href="configuration.html"><small>Previous</small><strong>Configuration</strong></a></nav>
+            <footer class="page-foot">
+                <a href="https://github.com/akindutire/authorization-pkg/edit/main/docs/best-practices.html">Edit this page on GitHub</a>
+                <a href="https://github.com/akindutire/authorization-pkg/issues">Report an issue</a>
+                <a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a>
+            </footer>
+        </main>
+        <nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="lvl-2"><a href="#1-explicitly-define-casts-for-better-ide-support">1. Explicitly Define $casts for Better IDE Support</a></li><li class="lvl-2"><a href="#2-use-entity-specific-enums-for-type-safety">2. Use Entity-Specific Enums for Type Safety</a></li><li class="lvl-2"><a href="#3-configure-indexed-properties">3. Configure Indexed Properties</a></li><li class="lvl-2"><a href="#4-use-atomic-operations-for-race-condition-safety">4. Use Atomic Operations for Race-Condition Safety</a></li><li class="lvl-2"><a href="#5-warm-cache-in-production-deployments">5. Warm Cache in Production Deployments</a></li><li class="lvl-2"><a href="#6-use-redis-for-production-caching">6. Use Redis for Production Caching</a></li><li class="lvl-2"><a href="#7-configure-all-entity-tables-and-properties">7. Configure All Entity Tables and Properties</a></li><li class="lvl-2"><a href="#8-enable-auto-invalidation-for-reflection-cache">8. Enable Auto-Invalidation for Reflection Cache</a></li><li class="lvl-2"><a href="#9-optimize-cache-ttl-based-on-usage-patterns">9. Optimize Cache TTL Based on Usage Patterns</a></li><li class="lvl-3"><a href="#high-traffic-read-heavy-applications">High-Traffic, Read-Heavy Applications:</a></li><li class="lvl-3"><a href="#applications-with-frequent-ability-changes">Applications with Frequent Ability Changes:</a></li><li class="lvl-3"><a href="#development-environment">Development Environment:</a></li><li class="lvl-2"><a href="#10-use-ability-templates-for-consistency">10. Use Ability Templates for Consistency</a></li><li class="lvl-2"><a href="#performance-benchmarks">Performance Benchmarks</a></li><li class="lvl-2"><a href="#troubleshooting">Troubleshooting</a></li><li class="lvl-3"><a href="#cache-not-working">Cache Not Working</a></li><li class="lvl-3"><a href="#subject-value-not-found">Subject Value Not Found</a></li><li class="lvl-3"><a href="#slow-ability-checks-100ms">Slow Ability Checks (&gt;100ms)</a></li><li class="lvl-3"><a href="#abilities-not-persisting">Abilities Not Persisting</a></li><li class="lvl-2"><a href="#next-steps">Next Steps</a></li></ol></nav>
     </div>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="installation.html">Installation</a></li>
-                        <li><a href="quickstart.html">Quick Start</a></li>
-                        <li><a href="api.html">API Reference</a></li>
-                        <li><a href="configuration.html">Configuration</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="best-practices.html">Best Practices</a></li>
-                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
-                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>About</h4>
-                    <p>Created by Akindutire Ayomide</p>
-                    <p>MIT Licensed</p>
-                    <p>Version 2.0.0</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+    <dialog class="search-dialog" aria-label="Search documentation">
+        <div class="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Search methods, commands, config keys…" aria-label="Search" aria-controls="search-results" autocomplete="off" spellcheck="false"></div>
+        <ul class="search-results" id="search-results" role="listbox"></ul>
+        <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></div>
+    </dialog>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
-    <script>hljs.highlightAll();</script>
-    <script>
-        document.querySelector('.mobile-menu-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-    </script>
+    <script src="js/search-index.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

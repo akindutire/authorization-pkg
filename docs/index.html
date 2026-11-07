@@ -3,118 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akindutire Authorization - Modern Laravel Permissions</title>
-    <meta name="description" content="A modern, attribute-based authorization package for Laravel 9+ using PHP 8 attributes">
+    <title>Akindutire Authorization for Laravel</title>
+    <meta name="description" content="Give any Eloquent model its own abilities and guard controller actions with PHP 8 attributes. For Laravel 9+.">
+    <script>try{var t=localStorage.getItem('docs-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <style>
+        @media (max-width: 860px) { .landing .topbar-links { display: flex; } }
+        @media (max-width: 560px) { .landing .topbar-links { display: none; } }
+    </style>
 </head>
-<body>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">
-                <h1><a href="#home" style="text-decoration:none;" class="active">Akindutire Authorization</a></h1>
-            </div>
-            <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                ☰
-            </button>
-            <ul class="nav-links">
-                <li><a href="#home" class="active">Home</a></li>
-                <li><a href="installation.html">Installation</a></li>
-                <li><a href="quickstart.html">Quick Start</a></li>
-                <li><a href="api.html">API</a></li>
-                <li><a href="configuration.html">Configuration</a></li>
-                <li><a href="best-practices.html">Best Practices</a></li>
-                <li><a href="https://github.com/akindutire/authorization-pkg" target="_blank">GitHub</a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <header class="hero">
-        <div class="container">
-            <h1 class="hero-title">Model-Agnostic Authorization for Laravel</h1>
-            <p class="hero-subtitle">Attach abilities to ANY model - Articles, Organizations, TeamMembers - using PHP 8 attributes</p>
-            <div class="hero-buttons">
-                <a href="installation.html" class="btn btn-primary">Get Started</a>
-                <a href="https://github.com/akindutire/authorization-pkg" class="btn btn-secondary" target="_blank">View on GitHub</a>
-            </div>
-            <div class="code-preview">
-                <pre><code>composer require akindutire/authorization-pkg</code></pre>
-            </div>
-        </div>
+<body class="landing">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="topbar">
+        <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="8" fill="var(--brand)"/><path d="M10 16.5l4 4 8-9" fill="none" stroke="var(--paper)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brand-name">Authorization<small>for Laravel</small></span></a>
+        <div class="topbar-spacer"></div>
+        <nav class="topbar-links" aria-label="Primary">
+            <a href="quickstart.html">Guide</a>
+            <a href="api.html">API</a>
+        </nav>
+        <button class="search-trigger" type="button" data-search-open aria-label="Search documentation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Search docs</span><kbd>⌘K</kbd></button>
+        <button class="icon-btn theme-btn" type="button" aria-label="Toggle colour theme"><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        <a class="icon-btn" href="https://github.com/akindutire/authorization-pkg" aria-label="GitHub repository"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.4-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
     </header>
 
-    <section class="features">
-        <div class="container">
-            <h2 class="section-title">Why Choose This Package?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>PHP 8 Attributes</h3>
-                    <p>Clean, declarative syntax using modern PHP attributes instead of middleware chains</p>
+    <main id="main">
+        <section class="hero">
+            <div class="wrap hero-grid">
+                <div>
+                    <h1>Authorize the article, not just the user.</h1>
+                    <p class="hero-lede">Give any Eloquent model its own list of abilities — articles, team members, organisations — and guard controller actions with a single PHP attribute.</p>
+
+                    <div class="install">
+                        <code><span class="prompt">$ </span>composer require akindutire/authorization-pkg</code>
+                        <button class="copy-btn" type="button" data-copy="composer require akindutire/authorization-pkg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>Copy</span></button>
+                    </div>
+
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="quickstart.html">Start the quick start</a>
+                        <a class="btn btn-ghost" href="installation.html">Installation guide</a>
+                    </div>
+
+                    <ul class="hero-facts" aria-label="Requirements">
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>PHP 8.1+</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Laravel 9, 10, 11+</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Self-clearing cache</li>
+                        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>MIT licence</li>
+                    </ul>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3>Auto-Invalidating Cache</h3>
-                    <p>Intelligent cache that automatically updates when permissions change - no manual clearing needed</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3>JSON Storage</h3>
-                    <p>Modern JSON arrays instead of CSV strings for better performance and queryability</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🛡️</div>
-                    <h3>Atomic Operations</h3>
-                    <p>Race-condition-free permission updates with database-level locking</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📦</div>
-                    <h3>Model Agnostic</h3>
-                    <p>Works with any Eloquent model - User, TeamMember, Article, you name it</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🚀</div>
-                    <h3>Production Ready</h3>
-                    <p>Comprehensive test suite with 73 passing tests covering all edge cases</p>
+
+                <!-- Interactive access check -->
+                <div class="playground" id="playground" aria-label="Try an access check">
+                    <div class="pg-section">
+                        <div class="pg-label">
+                            <span>ArticleController.php</span>
+                            <div class="segmented" role="group" aria-label="Attribute">
+                                <button type="button" data-mode="HasAny" aria-pressed="true">HasAny</button>
+                                <button type="button" data-mode="HasAll" aria-pressed="false">HasAll</button>
+                            </div>
+                        </div>
+<pre class="pg-code"><span data-pg-attr><span class="t-attr">#[HasAny(['can_be_edited', 'can_be_published'], Article::class, 'id')]</span></span>
+<span class="t-kw">public function</span> <span class="t-cls">update</span>(<span class="t-attr">#[SubjectValue]</span> <span class="t-kw">int</span> <span class="t-var">$id</span>)</pre>
+                    </div>
+
+                    <div class="pg-section">
+                        <div class="pg-label"><span>Abilities on Article #42</span><span>Click to change</span></div>
+                        <ul class="ability-list">
+                            <li class="ability" data-ability="can_be_edited">
+                                <span class="ability-name">can_be_edited<span class="req">listed</span></span>
+                                <div class="segmented" role="group" aria-label="can_be_edited">
+                                    <button type="button" data-state="none" aria-pressed="false">Not set</button>
+                                    <button type="button" data-state="granted" aria-pressed="true">Granted</button>
+                                    <button type="button" data-state="revoked" aria-pressed="false">Revoked</button>
+                                </div>
+                            </li>
+                            <li class="ability" data-ability="can_be_published">
+                                <span class="ability-name">can_be_published<span class="req">listed</span></span>
+                                <div class="segmented" role="group" aria-label="can_be_published">
+                                    <button type="button" data-state="none" aria-pressed="true">Not set</button>
+                                    <button type="button" data-state="granted" aria-pressed="false">Granted</button>
+                                    <button type="button" data-state="revoked" aria-pressed="false">Revoked</button>
+                                </div>
+                            </li>
+                            <li class="ability" data-ability="can_be_deleted">
+                                <span class="ability-name">can_be_deleted</span>
+                                <div class="segmented" role="group" aria-label="can_be_deleted">
+                                    <button type="button" data-state="none" aria-pressed="false">Not set</button>
+                                    <button type="button" data-state="granted" aria-pressed="true">Granted</button>
+                                    <button type="button" data-state="revoked" aria-pressed="false">Revoked</button>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="pg-call" data-pg-call aria-live="polite"><span class="t-com">// effective = allowed − revoked</span></div>
+                    </div>
+
+                    <div class="pg-section">
+                        <div class="pg-label"><span>PUT /articles/42</span><span>Effective: <span data-pg-effective></span></span></div>
+                        <div class="verdict-row" data-pg-verdict data-result="pass" aria-live="polite">
+                            <span class="verdict-dot" aria-hidden="true"></span>
+                            <div>
+                                <div class="verdict-title" data-pg-title>Allowed — update() runs</div>
+                                <div class="verdict-detail" data-pg-detail></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="code-example">
-        <div class="container">
-            <h2 class="section-title">See It In Action</h2>
-            <div class="example-tabs">
-                <button class="tab-btn active" data-tab="controller">Controller</button>
-                <button class="tab-btn" data-tab="model">Model</button>
-                <button class="tab-btn" data-tab="facade">Facade</button>
+        <section class="band" aria-labelledby="flow-title">
+            <div class="wrap">
+                <div class="band-head">
+                    <h2 id="flow-title">What happens on each request</h2>
+                    <p>The middleware reads the attribute on your controller method, finds the subject, and compares its abilities before your code runs.</p>
+                </div>
+                <ol class="flow">
+                    <li>
+                        <h3>Request arrives</h3>
+                        <p>A route in the <code>validate.subject.action</code> middleware group is hit.</p>
+                    </li>
+                    <li>
+                        <h3>Read the attribute</h3>
+                        <p><code>#[HasAny]</code> or <code>#[HasAll]</code> is read from the method. Reflection is cached.</p>
+                    </li>
+                    <li>
+                        <h3>Find the subject</h3>
+                        <p>The <code>#[SubjectValue]</code> key is looked up in input, route, query, then JSON.</p>
+                    </li>
+                    <li>
+                        <h3>Compare abilities</h3>
+                        <p>Effective abilities are <code>allowed</code> minus <code>revoked</code>, served from cache.</p>
+                    </li>
+                    <li>
+                        <h3>Run or stop</h3>
+                        <p>Your method runs, or <code>ValidateSubjectActionException</code> is thrown.</p>
+                    </li>
+                </ol>
             </div>
+        </section>
 
-            <div class="tab-content active" id="controller">
-                <pre><code class="language-php">use Akindutire\Authorization\Attributes\{HasAny, SubjectValue};
+        <section class="band" aria-labelledby="examples-title">
+            <div class="wrap">
+                <div class="band-head">
+                    <h2 id="examples-title">Three ways to check</h2>
+                    <p>Use an attribute on the controller, call methods on the model, or ask the facade.</p>
+                </div>
+                <div class="examples">
+                    <div class="example-tabs" role="tablist" aria-label="Code examples" aria-orientation="vertical">
+                        <button type="button" role="tab" id="tab-controller" aria-controls="panel-controller" aria-selected="true"><strong>Controller attribute</strong><span>Block the request before it reaches your code</span></button>
+                        <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="false" tabindex="-1"><strong>Model trait</strong><span>Grant, revoke and check on any model</span></button>
+                        <button type="button" role="tab" id="tab-facade" aria-controls="panel-facade" aria-selected="false" tabindex="-1"><strong>Facade</strong><span>Check from services, jobs and policies</span></button>
+                    </div>
+                    <div>
+                        <div class="example-panel" role="tabpanel" id="panel-controller" aria-labelledby="tab-controller">
+<pre data-label="ArticleController.php"><code class="language-php">use Akindutire\Authorization\Attributes\{HasAny, SubjectValue};
 use App\Models\Article;
 
 class ArticleController extends Controller
 {
-    // Check if ARTICLE has abilities (not user!)
+    // Checks the ARTICLE's abilities, not the user's
     #[HasAny(['can_be_edited'], Article::class, 'id')]
     public function update(
         #[SubjectValue] int $id,
         Request $request
     ) {
-        // Only executes if the Article has 'can_be_edited' ability
+        // Only runs if the Article has 'can_be_edited'
         $article = Article::find($id);
         $article->update($request->validated());
 
         return response()->json($article);
     }
 }</code></pre>
-            </div>
+                        </div>
+                        <div class="example-panel" role="tabpanel" id="panel-model" aria-labelledby="tab-model" hidden>
+<pre data-label="PHP"><code class="language-php">use Akindutire\Authorization\Traits\HasPermissions;
 
-            <div class="tab-content" id="model">
-                <pre><code class="language-php">use Akindutire\Authorization\Traits\HasPermissions;
-
-// Works with ANY model!
+// Works with ANY model
 class Article extends Model { use HasPermissions; }
 class TeamMember extends Model { use HasPermissions; }
 class Organization extends Model { use HasPermissions; }
@@ -129,10 +195,9 @@ $member->grantPermission(['can_invite', 'can_manage_team']);
 if ($article->hasPermission('can_be_edited')) {
     // Article can be edited
 }</code></pre>
-            </div>
-
-            <div class="tab-content" id="facade">
-                <pre><code class="language-php">use Akindutire\Authorization\Facades\EntityPermission;
+                        </div>
+                        <div class="example-panel" role="tabpanel" id="panel-facade" aria-labelledby="tab-facade" hidden>
+<pre data-label="PHP"><code class="language-php">use Akindutire\Authorization\Facades\EntityPermission;
 
 // Check if Article has abilities
 $canEdit = EntityPermission::subject($article)->hasAny(['can_be_edited']);
@@ -142,83 +207,51 @@ $canInvite = EntityPermission::subject($member)->hasAll(['can_invite']);
 
 // Get role-based ability templates
 $abilities = EntityPermission::getAbilities('admin');</code></pre>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">73</div>
-                    <div class="stat-label">Passing Tests</div>
+        <section class="band" aria-labelledby="map-title">
+            <div class="wrap">
+                <div class="band-head">
+                    <h2 id="map-title">Read the docs</h2>
+                    <p>New here? Go through installation and the quick start in order. Come back to the reference when you need a method or a config key.</p>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-number">PHP 8.1+</div>
-                    <div class="stat-label">Modern PHP</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">Laravel 9+</div>
-                    <div class="stat-label">Framework Support</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">&lt;1μs</div>
-                    <div class="stat-label">Cached Lookups</div>
-                </div>
+                <nav class="doc-map" aria-labelledby="map-title">
+                    <a href="installation.html"><strong>Installation</strong><span>Requirements, migrations, traits and middleware</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a href="quickstart.html"><strong>Quick start</strong><span>Protect your first controller action in a few minutes</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a href="api.html"><strong>API reference</strong><span>Attributes, trait methods, facade and Artisan commands</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a href="configuration.html"><strong>Configuration</strong><span>Ability templates, caching, indexing and limits</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a href="best-practices.html"><strong>Best practices</strong><span>Production patterns, benchmarks and troubleshooting</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                    <a href="https://github.com/akindutire/authorization-pkg/issues"><strong>Get help</strong><span>Open an issue on GitHub</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+                </nav>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <section class="cta">
-        <div class="container">
-            <h2>Ready to Get Started?</h2>
-            <p>Install the package and start building secure Laravel applications in minutes</p>
-            <a href="installation.html" class="btn btn-primary btn-large">Read the Documentation</a>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="installation.html">Installation</a></li>
-                        <li><a href="quickstart.html">Quick Start</a></li>
-                        <li><a href="api.html">API Reference</a></li>
-                        <li><a href="configuration.html">Configuration</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="best-practices.html">Best Practices</a></li>
-                        <li><a href="https://github.com/akindutire/authorization-pkg/issues">Report Issues</a></li>
-                        <li><a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>About</h4>
-                    <p>Created by Akindutire Ayomide</p>
-                    <p>MIT Licensed</p>
-                    <p>Version 2.0.0</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2026 Akindutire Authorization. All rights reserved.</p>
-            </div>
+    <footer class="site-foot">
+        <div class="wrap">
+            <span>Created by Akindutire Ayomide · MIT licence · v2.0.0</span>
+            <nav aria-label="Footer">
+                <a href="https://github.com/akindutire/authorization-pkg">GitHub</a>
+                <a href="https://packagist.org/packages/akindutire/authorization-pkg">Packagist</a>
+                <a href="https://github.com/akindutire/authorization-pkg/issues">Issues</a>
+            </nav>
         </div>
     </footer>
+
+    <dialog class="search-dialog" aria-label="Search documentation">
+        <div class="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="Search methods, commands, config keys…" aria-label="Search" aria-controls="search-results" autocomplete="off" spellcheck="false"></div>
+        <ul class="search-results" id="search-results" role="listbox"></ul>
+        <div class="search-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> to move</span><span><kbd>Enter</kbd> to open</span><span><kbd>Esc</kbd> to close</span></div>
+    </dialog>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/php.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <script src="js/search-index.js"></script>
     <script src="js/main.js"></script>
-    <script>
-        document.querySelector('.mobile-menu-toggle').addEventListener('click', function() {
-            document.querySelector('.nav-links').classList.toggle('active');
-        });
-    </script>
 </body>
 </html>
